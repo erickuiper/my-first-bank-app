@@ -1,0 +1,15 @@
+project: my-first-bank-app
+version: 0.1.0
+mvp_release: v0.1
+backend:
+  framework: fastapi
+  python: "3.11"
+  db: postgres
+frontend:
+  framework: react-native
+  typescript: true
+retrieval_keys:
+  - "MVP"
+  - "API"
+  - "DATA_MODEL"
+  - "CURSOR_PAGINATION"
