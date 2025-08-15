@@ -68,7 +68,9 @@ async def create_child(
 
 
 @router.get("/", response_model=List[ChildResponse])
-async def list_children(current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)) -> List[ChildResponse]:
+async def list_children(
+    current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)
+) -> List[ChildResponse]:
     result = await db.execute(select(Child).where(Child.parent_id == current_user.id))
     children = result.scalars().all()
     return list(children)

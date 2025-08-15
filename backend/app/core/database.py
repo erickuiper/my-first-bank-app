@@ -11,6 +11,7 @@ async_session = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit
 
 from typing import AsyncGenerator
 
+
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
     async with async_session() as session:
         yield session
