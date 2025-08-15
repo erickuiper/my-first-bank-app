@@ -13,9 +13,8 @@ This document provides comprehensive instructions for setting up, developing, te
 7. [Docker Development](#docker-development)
 8. [Deployment](#deployment)
 9. [Code Quality & Linting](#code-quality--linting)
-10. [Linear.app Integration & Automation](#linearapp-integration--automation)
-11. [Cursor Background Jobs Workflow](#cursor-background-jobs-workflow)
-12. [Troubleshooting](#troubleshooting)
+
+10. [Troubleshooting](#troubleshooting)
 
 ## Prerequisites
 
@@ -480,54 +479,7 @@ The project includes GitHub Actions workflows that automatically run:
 - **Frontend**: ESLint, TypeScript check, Playwright tests
 - **Integration**: Docker Compose health checks
 
-## Linear.app Integration & Automation
 
-### Overview
-Linear.app is a project management tool that helps track tasks, bugs, and features.
-
-### Key Features
-- **Task Management**: Create, assign, and track tasks
-- **Bug Tracking**: Log and manage bugs
-- **Feature Requests**: Collect and prioritize new features
-- **Automated Workflows**: Trigger actions based on events (e.g., new issues)
-
-### Setup
-1. **Create a Linear Account**:
-   - Visit [Linear.app](https://linear.app)
-   - Sign up for a free account or use an existing one.
-
-2. **Create a Project**:
-   - In Linear, create a new project for the My First Bank App.
-   - Name it "My First Bank App Development".
-
-3. **API Integration**:
-   - Go to your project's settings.
-   - Navigate to "Integrations" > "API".
-   - Click "Add Integration".
-   - Select "GitHub" or "Other" (if using a different platform).
-   - Copy the API token.
-
-4. **Webhook Setup**:
-   - In Linear, go to "Settings" > "Webhooks".
-   - Click "Add Webhook".
-   - Select "GitHub" or "Other" (if using a different platform).
-   - Copy the webhook URL.
-
-### Example Workflows
-1. **New Issue Created**:
-   - When a new issue is created in Linear, it triggers a GitHub Actions workflow.
-   - The workflow can automatically assign the issue to a team member.
-
-2. **Issue Updated**:
-   - If an issue is updated (e.g., status changed), the workflow can update the issue in Linear.
-
-3. **New Pull Request**:
-   - When a new pull request is opened, the workflow can automatically add reviewers.
-
-### Benefits
-- **Efficiency**: Reduces manual work for repetitive tasks.
-- **Consistency**: Ensures tasks are tracked and updated across platforms.
-- **Visibility**: Provides a single source of truth for all development activities.
 
 ## Cursor Background Jobs Workflow
 
@@ -554,163 +506,19 @@ Cursor is a powerful tool for managing background jobs and workflows.
 3. **Create a Workflow**:
    - In Cursor, create a new workflow.
    - Name it "My First Bank App Deployment".
-   - Add a trigger (e.g., "New Issue Created" from Linear).
+   - Add a trigger (e.g., "New Issue Created" from external system).
    - Add an action (e.g., "Deploy to Production" using Docker Compose).
 
 ### Example Workflow
 1. **New Issue Created**:
-   - When a new issue is created in Linear, it triggers the Cursor workflow.
+   - When a new issue is created, it triggers the Cursor workflow.
    - The workflow automatically deploys the application to production.
 
 ### Benefits
 - **Reliability**: Ensures consistent deployments and updates.
 - **Scalability**: Easily manage multiple background jobs.
 - **Error Prevention**: Automatically retries failed deployments.
-
-## Linear.app Integration & Automation
-
-### Overview
-Linear.app is integrated with the My First Bank App project to provide automated project management, progress tracking, and seamless workflow integration with Cursor background jobs.
-
-### Environment Setup
-Add these environment variables to your `.env` file:
-```bash
-# Linear.app Integration
-LINEAR_API_KEY=your_linear_api_key
-LINEAR_PROJECT_ID=your_project_id
-LINEAR_TEAM_ID=your_team_id
-```
-
-### Automated Project Updates
-The project includes a Python script (`update_linear.py`) that automatically:
-- Updates project status based on CI/CD results
-- Creates issues for failed tests or linting violations
-- Tracks progress and milestone completion
-- Reports coverage improvements and code quality metrics
-
-### Usage
-```bash
-# Install dependencies
-pip install -r requirements.txt
-
-# Update Linear.app project status
-python update_linear.py
-
-# Run with specific environment variables
-LINEAR_API_KEY=your_key LINEAR_PROJECT_ID=your_id python update_linear.py
-```
-
-### Integration Benefits
-- **Real-time Progress Tracking**: Automatic updates based on development activities
-- **Issue Management**: Automated creation and assignment of development tasks
-- **CI/CD Integration**: Linear.app updates based on pipeline results
-- **Team Collaboration**: Centralized project visibility and communication
-
-## Cursor Background Jobs Workflow
-
-### Overview
-Cursor IDE background jobs work seamlessly with Linear.app to provide automated development iterations without user interaction.
-
-### Automated Development Cycle
-The system runs in continuous iterations:
-
-1. **Code Changes** → Git commit/push
-2. **CI/CD Pipeline** → Automated testing and linting
-3. **Linear.app Update** → Automatic progress tracking
-4. **Background Jobs** → Continuous monitoring and updates
-5. **Repeat** → Seamless iteration without user interaction
-
-### Background Job Functions
-- **Test Execution**: Runs backend and frontend tests automatically
-- **Linting Checks**: Ensures code quality standards
-- **Linear.app Updates**: Creates and updates issues based on progress
-- **CI/CD Monitoring**: Tracks pipeline status and reports issues
-- **Coverage Analysis**: Monitors test coverage and creates improvement tasks
-
-### Setup Background Jobs
-```bash
-# Start continuous background monitoring
-python -c "
-import time
-import subprocess
-import os
-
-def run_background_jobs():
-    while True:
-        try:
-            # Run tests
-            subprocess.run(['docker-compose', 'exec', '-T', 'backend', 'pytest'], check=True)
-            
-            # Update Linear.app
-            subprocess.run(['python', 'update_linear.py'], check=True)
-            
-            # Wait before next iteration
-            time.sleep(300)  # 5 minutes
-            
-        except Exception as e:
-            print(f'Background job error: {e}')
-            time.sleep(60)  # Wait 1 minute on error
-
-if __name__ == '__main__':
-    run_background_jobs()
-"
-```
-
-### Systemd Service (Optional)
-For persistent background jobs, create a systemd service:
-```bash
-# Create background job service
-cat > /etc/systemd/system/bankapp-automation.service << EOF
-[Unit]
-Description=Bank App Automation
-After=network.target
-
-[Service]
-Type=simple
-User=your_user
-WorkingDirectory=/path/to/your/project
-ExecStart=/usr/bin/python3 -c "
-import time
-import subprocess
-import os
-
-def run_background_jobs():
-    while True:
-        try:
-            # Run automated tasks
-            subprocess.run(['python', 'update_linear.py'], check=True)
-            subprocess.run(['docker-compose', 'exec', '-T', 'backend', 'pytest'], check=True)
-            time.sleep(300)
-        except Exception as e:
-            print(f'Error: {e}')
-            time.sleep(60)
-
-if __name__ == '__main__':
-    run_background_jobs()
-"
-Restart=always
-RestartSec=10
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
-# Enable and start service
-sudo systemctl enable bankapp-automation
-sudo systemctl start bankapp-automation
-```
-
-### Workflow Automation Benefits
-- **Zero Manual Intervention**: Background jobs handle routine tasks automatically
-- **Continuous Monitoring**: Real-time status updates and issue tracking
-- **Seamless Iterations**: Development cycles run continuously
-- **Quality Assurance**: Automated testing and linting on every iteration
-- **Project Visibility**: Linear.app always reflects current project status
-
-### Monitoring and Alerts
-- **Service Status**: Check background job status with `systemctl status bankapp-automation`
-- **Logs**: View logs with `journalctl -u bankapp-automation -f`
-- **Linear.app Updates**: Monitor automatic issue creation and updates
+- **System Updates**: Monitor automatic issue creation and updates
 - **CI/CD Integration**: Track pipeline status and automated reporting
 
 ## Troubleshooting

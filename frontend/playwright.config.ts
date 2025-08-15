@@ -71,12 +71,13 @@ export default defineConfig({
   ],
 
   /* Run your local dev server before starting the tests */
-  webServer: {
-    command: 'npm run web',
-    url: 'http://localhost:19006',
-    reuseExistingServer: !process.env.CI,
-    timeout: 120 * 1000,
-  },
+  // Temporarily disabled webServer for CI/CD compatibility
+  // webServer: {
+  //   command: 'npx expo start --web',
+  //   url: 'http://localhost:19006',
+  //   reuseExistingServer: !process.env.CI,
+  //   timeout: 120 * 1000,
+  // },
 
   /* Global test timeout */
   timeout: 30000,
