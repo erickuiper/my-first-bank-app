@@ -13,8 +13,9 @@ This document provides comprehensive instructions for setting up, developing, te
 7. [Docker Development](#docker-development)
 8. [Deployment](#deployment)
 9. [Code Quality & Linting](#code-quality--linting)
-10. [Troubleshooting](#troubleshooting)
-11. [MVP Version 0.2 Roadmap](#mvp-version-02-roadmap)
+10. [Pre-Commit Checklist for CI/CD Success](#-pre-commit-checklist-for-cicd-success)
+11. [Troubleshooting](#troubleshooting)
+12. [MVP Version 0.2 Roadmap](#mvp-version-02-roadmap)
 
 ## Prerequisites
 
@@ -1055,3 +1056,166 @@ def test_allowance_calculation_with_penalties():
 ---
 
 **Note**: This document is maintained by the development team. For questions or updates, please create an issue or contact the maintainers.
+
+## 🚀 **Development Workflow**
+
+### **Local Development Setup**
+1. **Clone and setup**: `git clone` + `docker-compose up`
+2. **Backend development**: FastAPI + SQLAlchemy + Alembic
+3. **Frontend development**: React + Expo + Playwright
+4. **Database management**: PostgreSQL + pgAdmin
+
+### **Testing Strategy**
+1. **Backend tests**: `pytest` with coverage
+2. **Frontend tests**: Playwright E2E tests
+3. **Integration tests**: API endpoint testing
+4. **Database tests**: Transaction logic validation
+
+### **CI/CD Pipeline**
+1. **GitHub Actions**: Automated testing and deployment
+2. **Quality gates**: Linting, type checking, test coverage
+3. **Deployment**: Staging and production environments
+
+## ✅ **Pre-Commit Checklist for CI/CD Success**
+
+### **🔍 Pre-Commit Quality Gates**
+
+**IMPORTANT**: Complete ALL of these steps locally before committing to avoid CI/CD failures and multiple pipeline iterations.
+
+#### **1. Backend Code Quality (Required)**
+```bash
+cd backend
+
+# 1. Black formatting check
+black . --line-length=120 --check
+
+# 2. isort import sorting check
+isort . --profile=black --line-length=120 --check-only
+
+# 3. Flake8 linting check
+flake8 . --max-line-length=120
+
+# 4. MyPy type checking
+mypy . --config-file=pyproject.toml
+
+# 5. Pytest collection and execution
+pytest --collect-only
+pytest tests/ --cov=app --cov-report=term-missing
+```
+
+#### **2. Frontend Code Quality (Required)**
+```bash
+cd frontend
+
+# 1. ESLint check
+npm run lint
+
+# 2. TypeScript type check
+npm run type-check
+
+# 3. Build verification
+npm run build
+
+# 4. Playwright tests (if web server available)
+npm run test:e2e
+```
+
+#### **3. Full Stack Integration (Recommended)**
+```bash
+# 1. Start full stack locally
+docker-compose up -d
+
+# 2. Run backend tests with database
+cd backend && pytest tests/ --cov=app
+
+# 3. Run frontend tests with backend
+cd frontend && npm run test:e2e
+
+# 4. Stop services
+docker-compose down
+```
+
+### **🚨 Common CI/CD Failure Points**
+
+#### **Backend Failures**
+- **Black formatting**: Run `black . --line-length=120` locally
+- **isort imports**: Run `isort . --profile=black --line-length=120` locally
+- **Flake8 violations**: Fix all E, W, F errors before committing
+- **MyPy errors**: Resolve all type annotation issues
+- **Pytest collection**: Ensure `pythonpath = ["."]` in pyproject.toml
+- **Import errors**: Check all `from app.` imports resolve correctly
+
+#### **Frontend Failures**
+- **ESLint errors**: Run `npm run lint:fix` to auto-fix issues
+- **TypeScript errors**: Run `npm run type-check` to identify issues
+- **Build failures**: Run `npm run build` locally first
+- **Playwright failures**: Ensure web server starts correctly
+
+#### **Integration Failures**
+- **Database connection**: Check DATABASE_URL in environment
+- **API endpoints**: Verify backend server is running
+- **CORS issues**: Check frontend-backend communication
+- **Test isolation**: Ensure tests don't interfere with each other
+
+### **📋 Pre-Commit Workflow**
+
+#### **Step 1: Code Changes**
+1. Make your code changes
+2. Save all files
+
+#### **Step 2: Backend Quality Check**
+```bash
+cd backend
+black . --line-length=120
+isort . --profile=black --line-length=120
+flake8 . --max-line-length=120
+mypy . --config-file=pyproject.toml
+pytest tests/ --cov=app --cov-report=term-missing
+```
+
+#### **Step 3: Frontend Quality Check**
+```bash
+cd frontend
+npm run lint:fix
+npm run type-check
+npm run build
+```
+
+#### **Step 4: Integration Test (Optional but Recommended)**
+```bash
+# Start services
+docker-compose up -d
+
+# Run integration tests
+cd backend && pytest tests/ --cov=app
+cd frontend && npm run test:e2e
+
+# Stop services
+docker-compose down
+```
+
+#### **Step 5: Commit Only When All Checks Pass**
+```bash
+git add .
+git commit -m "Descriptive commit message"
+git push
+```
+
+### **🎯 Benefits of Pre-Commit Checklist**
+
+1. **Faster CI/CD**: No more waiting for pipeline failures
+2. **Higher Quality**: Catch issues before they reach the repository
+3. **Developer Experience**: Immediate feedback on code quality
+4. **Team Efficiency**: Reduce pipeline iterations and delays
+5. **Confidence**: Know your code will pass CI/CD before pushing
+
+### **⚠️ Emergency Override (Use Sparingly)**
+
+If you must commit without full pre-commit checks:
+
+1. **Document the reason** in commit message
+2. **Tag with [WIP]** or [SKIP-CHECKS]
+3. **Plan immediate follow-up** to fix issues
+4. **Notify team** of potential CI/CD delays
+
+**Example**: `git commit -m "[WIP] Emergency fix for production issue - will complete checks in follow-up commit"`
