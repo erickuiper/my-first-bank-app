@@ -26,15 +26,17 @@ test.describe('Authentication', () => {
     await expect(page.getByRole('heading', { name: 'Create Account' })).toBeVisible();
     await expect(page.getByText('Sign up for a new account')).toBeVisible();
     
-    // Check registration form elements
+    // Check registration form elements - use more specific selectors to avoid duplicates
     await expect(page.getByPlaceholder('Email')).toBeVisible();
-    await expect(page.getByPlaceholder('Password')).toBeVisible();
+    
+    // Use nth selector to distinguish between the two password fields
+    await expect(page.locator('input[placeholder="Password"]').nth(0)).toBeVisible();
     await expect(page.getByPlaceholder('Confirm Password')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Sign Up' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Create Account' })).toBeVisible();
     
     // Check navigation back to login
     await expect(page.getByText('Already have an account?')).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Sign In' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Sign in' })).toBeVisible();
   });
 
   test('should show validation errors for empty form submission', async ({ page }) => {
@@ -89,16 +91,15 @@ test.describe('Authentication', () => {
     const testEmail = `test${Date.now()}@example.com`;
     await page.getByPlaceholder('Email').fill(testEmail);
     
-    // Use more specific selectors for password fields
-    const passwordFields = page.getByPlaceholder('Password');
+    // Use more specific selectors for password fields to avoid strict mode violations
+    const firstPasswordField = page.locator('input[placeholder="Password"]').nth(0);
     const confirmPasswordField = page.getByPlaceholder('Confirm Password');
     
-    // Fill the first password field (should be the main password)
-    await passwordFields.first().fill('password123');
+    await firstPasswordField.fill('password123');
     await confirmPasswordField.fill('password123');
     
     // Submit registration
-    await page.getByRole('button', { name: 'Sign Up' }).click();
+    await page.getByRole('button', { name: 'Create Account' }).click();
     
     // Should navigate to dashboard after successful registration
     await expect(page.getByText('My Children')).toBeVisible();
@@ -132,13 +133,35 @@ test.describe('Authentication', () => {
     await page.goto('http://localhost:3000/');
     await page.waitForLoadState('networkidle');
     
-    // First login (assuming user exists)
-    await page.getByPlaceholder('Email').fill('test@example.com');
-    await page.getByPlaceholder('Password').fill('password123');
-    await page.getByRole('button', { name: 'Sign In' }).click();
+    // First, create a new user account to ensure we have someone to log out
+    await page.getByRole('link', { name: 'Sign Up' }).click();
     
-    // Verify we're on dashboard
+    // Fill in registration form
+    const testEmail = `test${Date.now()}@example.com`;
+    await page.getByPlaceholder('Email').fill(testEmail);
+    
+    // Use specific selectors for password fields
+    const firstPasswordField = page.locator('input[placeholder="Password"]').nth(0);
+    const confirmPasswordField = page.getByPlaceholder('Confirm Password');
+    
+    await firstPasswordField.fill('password123');
+    await confirmPasswordField.fill('password123');
+    
+    // Submit registration
+    await page.getByRole('button', { name: 'Create Account' }).click();
+    
+    // Wait for navigation to dashboard
     await expect(page.getByText('My Children')).toBeVisible();
+    
+    // Verify we're on dashboard and logout button is visible
+    await expect(page.getByRole('button', { name: 'Logout' })).toBeVisible();
+    
+    // Handle the confirmation dialog that appears when clicking logout
+    page.on('dialog', dialog => {
+      if (dialog.message() === 'Are you sure you want to logout?') {
+        dialog.accept(); // Click "OK" on the confirmation dialog
+      }
+    });
     
     // Click logout
     await page.getByRole('button', { name: 'Logout' }).click();
@@ -157,15 +180,15 @@ test.describe('Authentication', () => {
     // Fill in registration form with mismatched passwords using specific selectors
     await page.getByPlaceholder('Email').fill('test@example.com');
     
-    // Use specific selectors to avoid ambiguity
-    const passwordFields = page.getByPlaceholder('Password');
+    // Use specific selectors to avoid ambiguity and strict mode violations
+    const firstPasswordField = page.locator('input[placeholder="Password"]').nth(0);
     const confirmPasswordField = page.getByPlaceholder('Confirm Password');
     
-    await passwordFields.first().fill('password123');
+    await firstPasswordField.fill('password123');
     await confirmPasswordField.fill('differentpassword');
     
     // Submit registration
-    await page.getByRole('button', { name: 'Sign Up' }).click();
+    await page.getByRole('button', { name: 'Create Account' }).click();
     
     // Should stay on registration page (no navigation)
     await expect(page.getByRole('heading', { name: 'Create Account' })).toBeVisible();

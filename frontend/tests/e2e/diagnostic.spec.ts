@@ -134,7 +134,9 @@ test.describe('Frontend Diagnostic Tests', () => {
     await expect(page.getByRole('heading', { name: 'Create Account' })).toBeVisible();
     await expect(page.getByText('Sign up for a new account')).toBeVisible();
     await expect(page.getByPlaceholder('Email')).toBeVisible();
-    await expect(page.getByPlaceholder('Password')).toBeVisible();
+    
+    // Use specific selectors to avoid strict mode violations
+    await expect(page.locator('input[placeholder="Password"]').nth(0)).toBeVisible();
     await expect(page.getByPlaceholder('Confirm Password')).toBeVisible();
     
     console.log('✅ Navigation to registration page works');
