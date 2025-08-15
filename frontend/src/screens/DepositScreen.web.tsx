@@ -37,6 +37,7 @@ const DepositScreen: React.FC = () => {
     try {
       const depositData: DepositData = {
         amount_cents: amountCents,
+        transaction_type: 'deposit',
         idempotency_key: `deposit_${accountId}_${Date.now()}_${Math.random()}`,
       };
 

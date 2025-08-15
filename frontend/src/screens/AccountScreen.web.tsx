@@ -25,7 +25,7 @@ const AccountScreen: React.FC = () => {
       // Mock data for now
       const mockAccount: Account = {
         id: id,
-        account_type: accountType || 'checking',
+        account_type: (accountType as 'checking' | 'savings') || 'checking',
         balance_cents: 2500,
         child_id: 1,
         created_at: new Date().toISOString(),
@@ -38,7 +38,7 @@ const AccountScreen: React.FC = () => {
           account_id: id,
           amount_cents: 1000,
           transaction_type: 'deposit',
-          description: 'Weekly allowance',
+          idempotency_key: 'mock_key_1',
           created_at: new Date().toISOString(),
         },
         {
@@ -46,7 +46,7 @@ const AccountScreen: React.FC = () => {
           account_id: id,
           amount_cents: -500,
           transaction_type: 'withdrawal',
-          description: 'Toy purchase',
+          idempotency_key: 'mock_key_2',
           created_at: new Date(Date.now() - 86400000).toISOString(), // 1 day ago
         },
       ];
@@ -180,7 +180,7 @@ const AccountScreen: React.FC = () => {
                   fontWeight: 'bold',
                   margin: '0 0 5px 0'
                 }}>
-                  {transaction.description}
+                  {transaction.transaction_type.charAt(0).toUpperCase() + transaction.transaction_type.slice(1)}
                 </p>
                 <p style={{ 
                   color: '#666', 

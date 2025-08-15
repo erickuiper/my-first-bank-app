@@ -54,6 +54,7 @@ const DepositScreen: React.FC<DepositScreenProps> = ({ route, navigation }) => {
     try {
       const depositData: DepositData = {
         amount_cents: amountCents,
+        transaction_type: 'deposit',
         idempotency_key: `deposit_${accountId}_${Date.now()}_${Math.random()}`,
       };
 

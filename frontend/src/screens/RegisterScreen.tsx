@@ -44,7 +44,7 @@ const RegisterScreen: React.FC = () => {
         email: email.trim(),
         password: password,
       };
-      await register(data);
+      await register(data.email, data.password);
     } catch (error: any) {
       Alert.alert('Registration Failed', error.message || 'An error occurred during registration');
     } finally {

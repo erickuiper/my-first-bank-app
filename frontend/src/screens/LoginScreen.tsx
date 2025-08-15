@@ -33,7 +33,7 @@ const LoginScreen: React.FC = () => {
         email: email.trim(),
         password: password,
       };
-      await login(credentials);
+      await login(credentials.email, credentials.password);
     } catch (error: any) {
       Alert.alert('Login Failed', error.message || 'An error occurred during login');
     } finally {

@@ -71,7 +71,7 @@ class ApiService {
 
     // Add request interceptor to include auth token
     this.api.interceptors.request.use(
-      async (config: AxiosRequestConfig) => {
+      async (config: any) => {
         const token = await storage.getItem('auth_token');
         if (token && config.headers) {
           config.headers.Authorization = `Bearer ${token}`;
