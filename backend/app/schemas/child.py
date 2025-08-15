@@ -1,5 +1,5 @@
 from datetime import date, datetime
-from typing import TYPE_CHECKING, List
+from typing import List
 
 from pydantic import BaseModel, ConfigDict
 

@@ -19,9 +19,7 @@ def test_endpoint(base_url, endpoint, expected_status=200):
             print(f"✅ {endpoint}: {response.status_code}")
             return True
         else:
-            print(
-                f"❌ {endpoint}: Expected {expected_status}, got {response.status_code}"
-            )
+            print(f"❌ {endpoint}: Expected {expected_status}, got {response.status_code}")
             return False
     except requests.exceptions.RequestException as e:
         print(f"❌ {endpoint}: Error - {e}")
@@ -35,12 +33,8 @@ def main():
     else:
         app_url = os.getenv("HEROKU_APP_URL")
         if not app_url:
-            print(
-                "❌ Please provide the Heroku app URL as an argument or set HEROKU_APP_URL environment variable"
-            )
-            print(
-                "Usage: python test_deployment.py https://your-app-name.herokuapp.com"
-            )
+            print("❌ Please provide the Heroku app URL as an argument or " "set HEROKU_APP_URL environment variable")
+            print("Usage: python test_deployment.py https://your-app-name.herokuapp.com")
             sys.exit(1)
 
     # Ensure URL has proper format

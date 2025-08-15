@@ -1,7 +1,7 @@
 from decimal import Decimal
 from typing import List
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -23,22 +23,16 @@ async def create_child(
     db: AsyncSession = Depends(get_db),
 ):
     # Create child
-    db_child = Child(
-        name=child_data.name, birthdate=child_data.birthdate, parent_id=current_user.id
-    )
+    db_child = Child(name=child_data.name, birthdate=child_data.birthdate, parent_id=current_user.id)
 
     db.add(db_child)
     await db.commit()
     await db.refresh(db_child)
 
     # Create checking and savings accounts
-    checking_account = Account(
-        account_type="checking", balance_cents=Decimal(0), child_id=db_child.id
-    )
+    checking_account = Account(account_type="checking", balance_cents=Decimal(0), child_id=db_child.id)
 
-    savings_account = Account(
-        account_type="savings", balance_cents=Decimal(0), child_id=db_child.id
-    )
+    savings_account = Account(account_type="savings", balance_cents=Decimal(0), child_id=db_child.id)
 
     db.add_all([checking_account, savings_account])
     await db.commit()
@@ -74,9 +68,7 @@ async def create_child(
 
 
 @router.get("/", response_model=List[ChildResponse])
-async def list_children(
-    current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)
-):
+async def list_children(current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Child).where(Child.parent_id == current_user.id))
     children = result.scalars().all()
     return children

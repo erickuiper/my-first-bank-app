@@ -1,5 +1,4 @@
 import os
-from typing import Optional
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -31,9 +30,7 @@ class Settings(BaseSettings):
             heroku_db_url = os.getenv("DATABASE_URL")
             if heroku_db_url.startswith("postgres://"):
                 # Convert postgres:// to postgresql+asyncpg://
-                self.DATABASE_URL = heroku_db_url.replace(
-                    "postgres://", "postgresql+asyncpg://", 1
-                )
+                self.DATABASE_URL = heroku_db_url.replace("postgres://", "postgresql+asyncpg://", 1)
 
         if os.getenv("SECRET_KEY"):
             self.SECRET_KEY = os.getenv("SECRET_KEY")

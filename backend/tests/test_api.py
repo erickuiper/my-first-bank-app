@@ -1,11 +1,7 @@
-import time
 import uuid
 
 import pytest
 from httpx import AsyncClient
-
-from app.core.config import settings
-from app.main import app
 
 
 def get_unique_email():
@@ -134,9 +130,7 @@ async def test_protected_endpoint_without_token():
 async def test_protected_endpoint_with_invalid_token():
     """Test that protected endpoints return 401 with invalid token"""
     async with AsyncClient(base_url="http://localhost:8000") as ac:
-        response = await ac.get(
-            "/api/v1/children/", headers={"Authorization": "Bearer invalid_token"}
-        )
+        response = await ac.get("/api/v1/children/", headers={"Authorization": "Bearer invalid_token"})
         assert response.status_code == 401
 
 
@@ -172,9 +166,7 @@ async def test_create_child_with_auth():
         assert len(data["accounts"]) == 2
         assert any(acc["account_type"] == "checking" for acc in data["accounts"])
         assert any(acc["account_type"] == "savings" for acc in data["accounts"])
-        assert all(
-            acc["balance_cents"] == "0" for acc in data["accounts"]
-        )  # balance_cents is returned as string
+        assert all(acc["balance_cents"] == "0" for acc in data["accounts"])  # balance_cents is returned as string
 
 
 @pytest.mark.asyncio
@@ -223,9 +215,7 @@ async def test_list_children():
         token = login_response.json()["access_token"]
 
         # List children (should be empty initially)
-        response = await ac.get(
-            "/api/v1/children/", headers={"Authorization": f"Bearer {token}"}
-        )
+        response = await ac.get("/api/v1/children/", headers={"Authorization": f"Bearer {token}"})
         assert response.status_code == 200
         data = response.json()
         assert isinstance(data, list)
@@ -353,9 +343,7 @@ async def test_deposit_with_idempotency():
         assert response.status_code == 200
         data = response.json()
         assert "transaction" in data
-        assert (
-            data["transaction"]["amount_cents"] == "1000"
-        )  # amount_cents is returned as string
+        assert data["transaction"]["amount_cents"] == "1000"  # amount_cents is returned as string
         assert data["transaction"]["idempotency_key"] == idempotency_key
 
 
@@ -450,9 +438,7 @@ async def test_deposit_duplicate_idempotency():
         data1 = response1.json()
         data2 = response2.json()
         assert data1["transaction"]["id"] == data2["transaction"]["id"]
-        assert (
-            data1["transaction"]["amount_cents"] == data2["transaction"]["amount_cents"]
-        )
+        assert data1["transaction"]["amount_cents"] == data2["transaction"]["amount_cents"]
 
 
 @pytest.mark.asyncio
@@ -707,9 +693,7 @@ async def test_transactions_with_valid_cursor():
         assert response.status_code == 200
         data = response.json()
         assert len(data["transactions"]) == 1
-        assert (
-            data["has_more"] == False
-        )  # Should be false since we only have 1 transaction
+        assert data["has_more"] is False  # Should be false since we only have 1 transaction
 
         # Test with cursor if available
         if data["next_cursor"]:

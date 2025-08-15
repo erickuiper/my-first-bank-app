@@ -14,7 +14,7 @@ from app.models.account import Account
 from app.models.child import Child
 from app.models.transaction import Transaction
 from app.models.user import User
-from app.schemas.account import AccountResponse, BalanceUpdate
+from app.schemas.account import BalanceUpdate
 from app.schemas.transaction import (
     TransactionCreate,
     TransactionList,
@@ -24,21 +24,15 @@ from app.schemas.transaction import (
 router = APIRouter()
 
 
-async def verify_account_access(
-    account_id: int, current_user: User, db: AsyncSession
-) -> Account:
+async def verify_account_access(account_id: int, current_user: User, db: AsyncSession) -> Account:
     # Verify account belongs to current user's child
     result = await db.execute(
-        select(Account)
-        .join(Child)
-        .where(and_(Account.id == account_id, Child.parent_id == current_user.id))
+        select(Account).join(Child).where(and_(Account.id == account_id, Child.parent_id == current_user.id))
     )
     account = result.scalar_one_or_none()
 
     if not account:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Account not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Account not found")
 
     return account
 
@@ -57,20 +51,18 @@ async def deposit(
     if transaction_data.amount_cents < settings.MIN_DEPOSIT_AMOUNT_CENTS:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Amount must be at least ${settings.MIN_DEPOSIT_AMOUNT_CENTS / 100:.2f}",
+            detail=(f"Amount must be at least " f"${settings.MIN_DEPOSIT_AMOUNT_CENTS / 100:.2f}"),
         )
 
     if transaction_data.amount_cents > settings.MAX_DEPOSIT_AMOUNT_CENTS:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Amount cannot exceed ${settings.MAX_DEPOSIT_AMOUNT_CENTS / 100:.2f}",
+            detail=(f"Amount cannot exceed " f"${settings.MAX_DEPOSIT_AMOUNT_CENTS / 100:.2f}"),
         )
 
     # Check for existing transaction with same idempotency key
     existing_transaction = await db.execute(
-        select(Transaction).where(
-            Transaction.idempotency_key == transaction_data.idempotency_key
-        )
+        select(Transaction).where(Transaction.idempotency_key == transaction_data.idempotency_key)
     )
     existing = existing_transaction.scalar_one_or_none()
     if existing:
@@ -126,7 +118,7 @@ async def get_transactions(
     db: AsyncSession = Depends(get_db),
 ):
     # Verify account access
-    account = await verify_account_access(account_id, current_user, db)
+    await verify_account_access(account_id, current_user, db)
 
     # Build query
     query = select(Transaction).where(Transaction.account_id == account_id)
@@ -138,10 +130,8 @@ async def get_transactions(
             last_id = cursor_data.get("last_id")
             if last_id:
                 query = query.where(Transaction.id < last_id)
-        except:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid cursor"
-            )
+        except (ValueError, UnicodeDecodeError, json.JSONDecodeError):
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid cursor")
 
     # Order by id descending for consistent pagination
     query = query.order_by(desc(Transaction.id)).limit(limit + 1)
