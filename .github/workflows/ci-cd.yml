@@ -81,7 +81,7 @@ jobs:
         name: backend-coverage-${{ matrix.python-version }}
 
     - name: 📦 Upload test artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: backend-test-results-${{ matrix.python-version }}
         path: |
@@ -138,7 +138,7 @@ jobs:
         npx playwright test --reporter=html,junit
 
     - name: 📦 Upload Playwright reports
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: playwright-report-${{ matrix.node-version }}
         path: |
@@ -200,7 +200,7 @@ jobs:
         output: 'trivy-results.sarif'
 
     - name: 📦 Upload security scan results
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: security-scan-results
         path: trivy-results.sarif
