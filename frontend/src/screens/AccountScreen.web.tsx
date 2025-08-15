@@ -73,12 +73,12 @@ const AccountScreen: React.FC = () => {
 
   if (loading) {
     return (
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
         height: '100vh',
-        backgroundColor: theme.colors.background 
+        backgroundColor: theme.colors.background
       }}>
         <div>Loading...</div>
       </div>
@@ -87,12 +87,12 @@ const AccountScreen: React.FC = () => {
 
   if (!account) {
     return (
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
         height: '100vh',
-        backgroundColor: theme.colors.background 
+        backgroundColor: theme.colors.background
       }}>
         <div>Account not found</div>
       </div>
@@ -100,15 +100,15 @@ const AccountScreen: React.FC = () => {
   }
 
   return (
-    <div style={{ 
-      backgroundColor: theme.colors.background, 
+    <div style={{
+      backgroundColor: theme.colors.background,
       minHeight: '100vh',
       padding: '20px'
     }}>
-      <div style={{ 
-        backgroundColor: 'white', 
-        borderRadius: '8px', 
-        padding: '20px', 
+      <div style={{
+        backgroundColor: 'white',
+        borderRadius: '8px',
+        padding: '20px',
         marginBottom: '20px',
         boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
       }}>
@@ -118,10 +118,10 @@ const AccountScreen: React.FC = () => {
         <p style={{ color: theme.colors.text, marginBottom: '20px' }}>
           Account ID: {account.id}
         </p>
-        <div style={{ 
-          backgroundColor: theme.colors.primary, 
-          color: 'white', 
-          padding: '20px', 
+        <div style={{
+          backgroundColor: theme.colors.primary,
+          color: 'white',
+          padding: '20px',
           borderRadius: '8px',
           marginBottom: '20px'
         }}>
@@ -147,9 +147,9 @@ const AccountScreen: React.FC = () => {
         </button>
       </div>
 
-      <div style={{ 
-        backgroundColor: 'white', 
-        borderRadius: '8px', 
+      <div style={{
+        backgroundColor: 'white',
+        borderRadius: '8px',
         padding: '20px',
         boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
       }}>
@@ -162,7 +162,7 @@ const AccountScreen: React.FC = () => {
           </p>
         ) : (
           transactions.map((transaction) => (
-            <div 
+            <div
               key={transaction.id}
               style={{
                 border: '1px solid #e0e0e0',
@@ -175,15 +175,15 @@ const AccountScreen: React.FC = () => {
               }}
             >
               <div>
-                <p style={{ 
-                  color: theme.colors.text, 
+                <p style={{
+                  color: theme.colors.text,
                   fontWeight: 'bold',
                   margin: '0 0 5px 0'
                 }}>
                   {transaction.transaction_type.charAt(0).toUpperCase() + transaction.transaction_type.slice(1)}
                 </p>
-                <p style={{ 
-                  color: '#666', 
+                <p style={{
+                  color: '#666',
                   fontSize: '14px',
                   margin: 0
                 }}>

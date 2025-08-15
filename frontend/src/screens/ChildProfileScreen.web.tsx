@@ -70,11 +70,11 @@ const ChildProfileScreen: React.FC = () => {
     const birth = new Date(birthdate);
     let age = today.getFullYear() - birth.getFullYear();
     const monthDiff = today.getMonth() - birth.getMonth();
-    
+
     if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
       age--;
     }
-    
+
     return age;
   };
 
@@ -84,12 +84,12 @@ const ChildProfileScreen: React.FC = () => {
 
   if (loading) {
     return (
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
         height: '100vh',
-        backgroundColor: theme.colors.background 
+        backgroundColor: theme.colors.background
       }}>
         <div>Loading...</div>
       </div>
@@ -98,12 +98,12 @@ const ChildProfileScreen: React.FC = () => {
 
   if (!child) {
     return (
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
         height: '100vh',
-        backgroundColor: theme.colors.background 
+        backgroundColor: theme.colors.background
       }}>
         <div>Child not found</div>
       </div>
@@ -111,15 +111,15 @@ const ChildProfileScreen: React.FC = () => {
   }
 
   return (
-    <div style={{ 
-      backgroundColor: theme.colors.background, 
+    <div style={{
+      backgroundColor: theme.colors.background,
       minHeight: '100vh',
       padding: '20px'
     }}>
-      <div style={{ 
-        backgroundColor: 'white', 
-        borderRadius: '8px', 
-        padding: '20px', 
+      <div style={{
+        backgroundColor: 'white',
+        borderRadius: '8px',
+        padding: '20px',
         marginBottom: '20px',
         boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
       }}>
@@ -134,9 +134,9 @@ const ChildProfileScreen: React.FC = () => {
         </p>
       </div>
 
-      <div style={{ 
-        backgroundColor: 'white', 
-        borderRadius: '8px', 
+      <div style={{
+        backgroundColor: 'white',
+        borderRadius: '8px',
         padding: '20px',
         boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
       }}>
@@ -144,7 +144,7 @@ const ChildProfileScreen: React.FC = () => {
           Accounts
         </h2>
         {child.accounts.map((account) => (
-          <div 
+          <div
             key={account.id}
             style={{
               border: '1px solid #e0e0e0',
@@ -166,17 +166,17 @@ const ChildProfileScreen: React.FC = () => {
               <span style={{ fontSize: '24px', marginRight: '10px' }}>
                 {getAccountIcon(account.account_type)}
               </span>
-              <h3 style={{ 
-                color: theme.colors.primary, 
+              <h3 style={{
+                color: theme.colors.primary,
                 margin: 0,
                 textTransform: 'capitalize'
               }}>
                 {account.account_type} Account
               </h3>
             </div>
-            <p style={{ 
-              color: theme.colors.text, 
-              fontSize: '18px', 
+            <p style={{
+              color: theme.colors.text,
+              fontSize: '18px',
               fontWeight: 'bold',
               margin: 0
             }}>

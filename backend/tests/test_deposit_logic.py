@@ -6,16 +6,16 @@ from decimal import Decimal
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
-# Skip all tests in CI/CD environment since they require a database connection
-pytestmark = pytest.mark.skipif(
-    os.getenv("CI") == "true", reason="Skipping database tests in CI/CD - requires database connection"
-)
-
 from app.core.config import settings
 from app.models.account import Account
 from app.models.child import Child
 from app.models.transaction import Transaction
 from app.models.user import User
+
+# Skip all tests in CI/CD environment since they require a database connection
+pytestmark = pytest.mark.skipif(
+    os.getenv("CI") == "true", reason="Skipping database tests in CI/CD - requires database connection"
+)
 
 
 @pytest.mark.asyncio
@@ -122,7 +122,7 @@ async def test_idempotency(db_session: AsyncSession) -> None:
 async def test_deposit_logic(db_session) -> None:
     """Test deposit logic with database session"""
     # Create test data
-    user = User(email="test@example.com", hashed_password="hashed")
+    user = User(email="test@example.com", hashed_password="hashed")  # nosec B106
     db_session.add(user)
     await db_session.commit()
     await db_session.refresh(user)

@@ -53,7 +53,7 @@
 </head>
 <body>
     <h1>🔍 Frontend Debug Tool</h1>
-    
+
     <div class="debug-section">
         <h2>1. Test Current Frontend</h2>
         <p>Click the button below to test the current frontend at localhost:3000:</p>
@@ -114,7 +114,7 @@
             try {
                 const response = await fetch('http://localhost:3000/');
                 const html = await response.text();
-                
+
                 if (response.ok) {
                     resultDiv.innerHTML = `
                         <div class="success">
@@ -147,7 +147,7 @@
 
         function analyzeConsoleErrors() {
             const analysisDiv = document.getElementById('console-analysis');
-            
+
             if (consoleErrors.length === 0 && consoleWarnings.length === 0) {
                 analysisDiv.innerHTML = `
                     <div class="success">
@@ -158,7 +158,7 @@
             }
 
             let analysis = '<h3>🔍 Console Analysis</h3>';
-            
+
             if (consoleErrors.length > 0) {
                 analysis += `<h4>❌ Errors (${consoleErrors.length}):</h4>`;
                 consoleErrors.forEach((error, index) => {
@@ -184,8 +184,8 @@
             }
 
             // Check for specific error patterns
-            const colorsError = consoleErrors.some(error => 
-                error.args.some(arg => 
+            const colorsError = consoleErrors.some(error =>
+                error.args.some(arg =>
                     typeof arg === 'string' && arg.includes('Cannot read properties of undefined (reading \'colors\')')
                 )
             );
@@ -246,7 +246,7 @@
                     const children = rootElement.children;
                     let tree = '<h3>🌳 React Root Element</h3>';
                     tree += `<p>Root element found with ${children.length} children</p>`;
-                    
+
                     if (children.length === 0) {
                         tree += '<div class="error">❌ Root element has no children - this explains the whitescreen!</div>';
                     } else {
@@ -255,7 +255,7 @@
                             tree += `<p>Child ${i + 1}: ${children[i].tagName} - ${children[i].className || 'no class'}</p>`;
                         }
                     }
-                    
+
                     treeDiv.innerHTML = tree;
                 } else {
                     treeDiv.innerHTML = `

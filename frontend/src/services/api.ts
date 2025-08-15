@@ -18,12 +18,12 @@ const getApiBaseUrl = () => {
     // You'll need to update this with your actual Heroku app URL
     return 'https://your-backend-app-name.herokuapp.com/api/v1';
   }
-  
+
   // Check if we're in development
   if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
     return 'http://localhost:8000/api/v1';
   }
-  
+
   // Default to localhost for other environments
   return 'http://localhost:8000/api/v1';
 };

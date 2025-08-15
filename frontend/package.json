@@ -11,7 +11,9 @@
     "lint": "eslint . --ext .js,.jsx",
     "lint:fix": "eslint . --ext .js,.jsx --fix",
     "type-check": "tsc --noEmit",
-    "build": "expo export --platform web"
+    "build": "expo export --platform web",
+    "pre-commit": "npm run lint && npm run type-check && npm run build",
+    "pre-commit:fix": "npm run lint:fix && npm run type-check && npm run build"
   },
   "dependencies": {
     "@react-navigation/bottom-tabs": "^6.5.11",
@@ -43,6 +45,8 @@
     "@babel/preset-flow": "^7.27.1",
     "@babel/preset-react": "^7.27.1",
     "@babel/preset-typescript": "^7.27.1",
+    "@commitlint/cli": "^19.8.1",
+    "@commitlint/config-conventional": "^19.8.1",
     "@playwright/test": "^1.54.2",
     "@types/react": "~18.2.14",
     "@types/react-native": "~0.72.2",

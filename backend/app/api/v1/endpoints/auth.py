@@ -27,7 +27,7 @@ async def register(user_data: UserCreate, db: AsyncSession = Depends(get_db)) ->
 
     # Create access token
     access_token = create_access_token(data={"sub": user_data.email})
-    return Token(access_token=access_token, token_type="bearer")
+    return Token(access_token=access_token, token_type="bearer")  # nosec B106
 
 
 @router.post("/login", response_model=Token)
@@ -45,4 +45,4 @@ async def login(user_data: UserLogin, db: AsyncSession = Depends(get_db)) -> Tok
 
     # Create access token
     access_token = create_access_token(data={"sub": user.email})
-    return Token(access_token=access_token, token_type="bearer")
+    return Token(access_token=access_token, token_type="bearer")  # nosec B106

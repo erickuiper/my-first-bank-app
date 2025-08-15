@@ -92,11 +92,11 @@ const ChildProfileScreen: React.FC<ChildProfileScreenProps> = ({ navigation, rou
     const birth = new Date(birthdate);
     let age = today.getFullYear() - birth.getFullYear();
     const monthDiff = today.getMonth() - birth.getMonth();
-    
+
     if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
       age--;
     }
-    
+
     return age;
   };
 
@@ -274,7 +274,7 @@ const ChildProfileScreen: React.FC<ChildProfileScreenProps> = ({ navigation, rou
         {/* Accounts Section */}
         <View style={styles.accountsSection}>
           <Text style={styles.sectionTitle}>Accounts</Text>
-          
+
           {child.accounts.map((account) => (
             <Card key={account.id} style={styles.accountCard}>
               <Card.Content>
@@ -284,7 +284,7 @@ const ChildProfileScreen: React.FC<ChildProfileScreenProps> = ({ navigation, rou
                       {getAccountIcon(account.account_type)}
                     </Text>
                     <Text style={styles.accountName}>
-                      {account.account_type.charAt(0).toUpperCase() + 
+                      {account.account_type.charAt(0).toUpperCase() +
                        account.account_type.slice(1)} Account
                     </Text>
                   </View>
@@ -292,15 +292,15 @@ const ChildProfileScreen: React.FC<ChildProfileScreenProps> = ({ navigation, rou
                     {formatCurrency(account.balance_cents)}
                   </Text>
                 </View>
-                
+
                 <Divider style={{ marginVertical: theme.spacing.sm }} />
-                
+
                 <View style={styles.accountActions}>
                   <Button
                     mode="outlined"
-                    onPress={() => navigation.navigate('Account', { 
-                      accountId: account.id, 
-                      accountType: account.account_type 
+                    onPress={() => navigation.navigate('Account', {
+                      accountId: account.id,
+                      accountType: account.account_type
                     })}
                     style={styles.actionButton}
                   >
@@ -308,9 +308,9 @@ const ChildProfileScreen: React.FC<ChildProfileScreenProps> = ({ navigation, rou
                   </Button>
                   <Button
                     mode="contained"
-                    onPress={() => navigation.navigate('Deposit', { 
-                      accountId: account.id, 
-                      accountType: account.account_type 
+                    onPress={() => navigation.navigate('Deposit', {
+                      accountId: account.id,
+                      accountType: account.account_type
                     })}
                     style={styles.actionButton}
                   >

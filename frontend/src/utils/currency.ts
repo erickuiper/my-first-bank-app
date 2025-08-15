@@ -7,7 +7,7 @@ export const formatCurrency = (cents: number): string => {
   if (typeof cents !== 'number' || isNaN(cents)) {
     return '$0.00';
   }
-  
+
   const dollars = cents / 100;
   return `$${dollars.toFixed(2)}`;
 };
@@ -21,13 +21,13 @@ export const parseCurrencyToCents = (amount: string): number => {
   if (!amount || typeof amount !== 'string') {
     return 0;
   }
-  
+
   const cleanAmount = amount.replace(/[$,]/g, '');
   const parsed = parseFloat(cleanAmount);
-  
+
   if (isNaN(parsed)) {
     return 0;
   }
-  
+
   return Math.round(parsed * 100);
 };

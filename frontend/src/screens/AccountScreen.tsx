@@ -55,13 +55,13 @@ const AccountScreen: React.FC<AccountScreenProps> = ({ navigation, route }) => {
       }
 
       const data: TransactionList = await apiService.getTransactions(accountId, 20, cursor);
-      
+
       if (cursor) {
         setTransactions(prev => [...prev, ...data.transactions]);
       } else {
         setTransactions(data.transactions);
       }
-      
+
       setHasMore(data.has_more);
       setNextCursor(data.next_cursor);
     } catch (error) {
@@ -103,7 +103,7 @@ const AccountScreen: React.FC<AccountScreenProps> = ({ navigation, route }) => {
         <View style={styles.transactionHeader}>
           <View style={styles.transactionInfo}>
             <Text style={styles.transactionType}>
-              {item.transaction_type.charAt(0).toUpperCase() + 
+              {item.transaction_type.charAt(0).toUpperCase() +
                item.transaction_type.slice(1)}
             </Text>
             <Text style={styles.transactionDate}>
@@ -262,7 +262,7 @@ const AccountScreen: React.FC<AccountScreenProps> = ({ navigation, route }) => {
               {accountType.charAt(0).toUpperCase() + accountType.slice(1)} Account
             </Text>
             <Text style={styles.accountBalance}>
-              {formatCurrency(transactions.reduce((sum, t) => 
+              {formatCurrency(transactions.reduce((sum, t) =>
                 t.transaction_type === 'deposit' ? sum + t.amount_cents : sum - t.amount_cents, 0
               ))}
             </Text>
@@ -281,9 +281,9 @@ const AccountScreen: React.FC<AccountScreenProps> = ({ navigation, route }) => {
           </Button>
           <Button
             mode="contained"
-            onPress={() => navigation.navigate('Deposit', { 
-              accountId, 
-              accountType 
+            onPress={() => navigation.navigate('Deposit', {
+              accountId,
+              accountType
             })}
             style={styles.actionButton}
           >
@@ -293,7 +293,7 @@ const AccountScreen: React.FC<AccountScreenProps> = ({ navigation, route }) => {
 
         {/* Transactions Section */}
         <Text style={styles.sectionTitle}>Transaction History</Text>
-        
+
         {transactions.length === 0 ? (
           <View style={styles.emptyState}>
             <Text style={styles.emptyText}>

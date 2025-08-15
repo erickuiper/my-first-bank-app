@@ -885,23 +885,23 @@ CREATE TABLE scheduled_bills (
    - Core business logic
    - Basic API endpoints
    - Frontend chore management
-   
+
 2. **Recurring Bill Rules** (1-2 weeks)
    - Bill rule models and scheduling
    - Automated bill creation
    - Frontend bill management
-   
+
 3. **In-Memory Database Testing** (1-2 weeks)
    - SQLite in-memory database configuration
    - TestClient integration test conversion
    - Remove CI/CD skip conditions
    - Ensure 90%+ test coverage
-   
+
 4. **Background Jobs & Scheduler** (1-2 weeks)
    - Pay run automation
    - Bill processing
    - Scheduled task management
-   
+
 5. **Android App & Deployment** (2-3 weeks)
    - React Native Android build
    - Heroku deployment
@@ -947,7 +947,7 @@ def client(db_session):
     """Create test client with database session override"""
     def override_get_db():
         yield db_session
-    
+
     app.dependency_overrides[get_db] = override_get_db
     yield TestClient(app)
     app.dependency_overrides.clear()
@@ -977,7 +977,7 @@ def test_create_child_with_auth(client: TestClient):
         json={"email": "parent@example.com", "password": "password123"}
     )
     token = register_response.json()["access_token"]
-    
+
     # Create child with token
     response = client.post(
         "/api/v1/children/",
@@ -999,18 +999,18 @@ from app.models.chore import Chore
 def test_allowance_calculation_with_penalties():
     """Test allowance calculation with chore penalties"""
     service = AllowanceService()
-    
+
     # Base allowance: $5.00
     base_amount = Decimal("500")
     # Penalty per missed chore: $0.25
     penalty_per_chore = Decimal("25")
     # Missed 2 chores
     missed_chores = 2
-    
+
     earned_amount = service.calculate_earned_allowance(
         base_amount, penalty_per_chore, missed_chores
     )
-    
+
     # Expected: $5.00 - ($0.25 * 2) = $4.50
     expected = Decimal("450")
     assert earned_amount == expected

@@ -287,7 +287,7 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
                           {getAccountIcon(account.account_type)}
                         </Text>
                         <Text style={styles.accountName}>
-                          {account.account_type.charAt(0).toUpperCase() + 
+                          {account.account_type.charAt(0).toUpperCase() +
                            account.account_type.slice(1)} Account
                         </Text>
                       </View>
@@ -297,9 +297,9 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
                     </View>
                     <TouchableOpacity
                       style={[styles.button, styles.buttonOutlined, { marginTop: theme.spacing.sm }]}
-                      onPress={() => navigation.navigate('Account', { 
-                        accountId: account.id, 
-                        accountType: account.account_type 
+                      onPress={() => navigation.navigate('Account', {
+                        accountId: account.id,
+                        accountType: account.account_type
                       })}
                     >
                       <Text style={[styles.buttonText, styles.buttonOutlinedText]}>

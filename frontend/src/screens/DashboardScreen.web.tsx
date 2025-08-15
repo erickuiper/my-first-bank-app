@@ -103,12 +103,12 @@ const DashboardScreen: React.FC = () => {
 
   if (loading) {
     return (
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
         height: '100vh',
-        backgroundColor: theme.colors.background 
+        backgroundColor: theme.colors.background
       }}>
         <div>Loading...</div>
       </div>
@@ -116,8 +116,8 @@ const DashboardScreen: React.FC = () => {
   }
 
   return (
-    <div style={{ 
-      backgroundColor: theme.colors.background, 
+    <div style={{
+      backgroundColor: theme.colors.background,
       minHeight: '100vh'
     }}>
       {/* Header */}

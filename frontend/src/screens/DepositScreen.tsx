@@ -34,7 +34,7 @@ const DepositScreen: React.FC<DepositScreenProps> = ({ route, navigation }) => {
 
   const handleDeposit = async () => {
     const amountCents = Math.round(parseFloat(amount) * 100);
-    
+
     if (isNaN(amountCents) || amountCents <= 0) {
       Alert.alert('Error', 'Please enter a valid amount');
       return;
@@ -59,7 +59,7 @@ const DepositScreen: React.FC<DepositScreenProps> = ({ route, navigation }) => {
       };
 
       const result = await apiService.makeDeposit(accountId, depositData);
-      
+
       Alert.alert(
         'Success!',
         `Successfully deposited ${formatCurrency(amountCents)} to the ${accountType} account.\nNew balance: ${formatCurrency(result.new_balance_cents)}`,

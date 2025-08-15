@@ -9,7 +9,7 @@ const RegisterScreen: React.FC = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  
+
   const navigate = useNavigate();
   const theme = useTheme();
   const { register } = useAuth();
@@ -33,11 +33,11 @@ const RegisterScreen: React.FC = () => {
     try {
       setIsLoading(true);
       setError('');
-      
+
       // For now, we'll simulate a registration
       // In a real app, you'd call the actual register function
       await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
-      
+
       // Navigate to dashboard on success
       navigate('/dashboard');
     } catch (error) {
@@ -48,33 +48,33 @@ const RegisterScreen: React.FC = () => {
   };
 
   return (
-    <div style={{ 
-      backgroundColor: theme.colors.background, 
+    <div style={{
+      backgroundColor: theme.colors.background,
       minHeight: '100vh',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       padding: '20px'
     }}>
-      <div style={{ 
-        backgroundColor: 'white', 
-        borderRadius: '12px', 
+      <div style={{
+        backgroundColor: 'white',
+        borderRadius: '12px',
         padding: '40px',
         boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
         width: '100%',
         maxWidth: '400px'
       }}>
         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-          <h1 style={{ 
-            color: theme.colors.primary, 
-            fontSize: '28px', 
+          <h1 style={{
+            color: theme.colors.primary,
+            fontSize: '28px',
             fontWeight: 'bold',
             margin: '0 0 8px 0'
           }}>
             Create Account
           </h1>
-          <p style={{ 
-            color: theme.colors.textSecondary, 
+          <p style={{
+            color: theme.colors.textSecondary,
             fontSize: '16px',
             margin: 0
           }}>
@@ -168,16 +168,16 @@ const RegisterScreen: React.FC = () => {
           {isLoading ? 'Creating Account...' : 'Create Account'}
         </button>
 
-        <div style={{ 
-          textAlign: 'center', 
+        <div style={{
+          textAlign: 'center',
           marginTop: '24px',
           color: theme.colors.textSecondary
         }}>
           Already have an account?{' '}
-          <Link 
-            to="/login" 
-            style={{ 
-              color: theme.colors.primary, 
+          <Link
+            to="/login"
+            style={{
+              color: theme.colors.primary,
               textDecoration: 'none',
               fontWeight: 'bold'
             }}

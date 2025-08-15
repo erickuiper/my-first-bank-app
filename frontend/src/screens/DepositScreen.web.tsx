@@ -11,13 +11,13 @@ const DepositScreen: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const theme = useTheme();
-  
+
   // Mock current balance for demo
   const currentBalance = 2500; // $25.00 in cents
 
   const handleDeposit = async () => {
     const amountCents = Math.round(parseFloat(amount) * 100);
-    
+
     if (isNaN(amountCents) || amountCents <= 0) {
       alert('Please enter a valid amount');
       return;
@@ -44,13 +44,13 @@ const DepositScreen: React.FC = () => {
       // For now, we'll simulate the deposit
       // In a real app, you'd call the actual API
       await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
-      
+
       const newBalance = currentBalance + amountCents;
-      
+
       alert(
         `Successfully deposited ${formatCurrency(amountCents)} to the ${accountType} account.\nNew balance: ${formatCurrency(newBalance)}`
       );
-      
+
       // Navigate back to the account screen
       navigate(`/account/${accountId}/${accountType}`);
     } catch (error: any) {
@@ -67,30 +67,30 @@ const DepositScreen: React.FC = () => {
   };
 
   return (
-    <div style={{ 
-      backgroundColor: theme.colors.background, 
+    <div style={{
+      backgroundColor: theme.colors.background,
       minHeight: '100vh',
       padding: '20px'
     }}>
-      <div style={{ 
-        backgroundColor: 'white', 
-        borderRadius: '12px', 
+      <div style={{
+        backgroundColor: 'white',
+        borderRadius: '12px',
         padding: '40px',
         boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
         maxWidth: '500px',
         margin: '0 auto'
       }}>
         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-          <h1 style={{ 
-            color: theme.colors.primary, 
-            fontSize: '28px', 
+          <h1 style={{
+            color: theme.colors.primary,
+            fontSize: '28px',
             fontWeight: 'bold',
             margin: '0 0 8px 0'
           }}>
             Make a Deposit
           </h1>
-          <p style={{ 
-            color: theme.colors.textSecondary, 
+          <p style={{
+            color: theme.colors.textSecondary,
             fontSize: '16px',
             margin: 0
           }}>
@@ -109,10 +109,10 @@ const DepositScreen: React.FC = () => {
           <h2 style={{ margin: '0 0 8px 0', fontSize: '18px' }}>
             Current Balance
           </h2>
-          <p style={{ 
-            fontSize: '32px', 
-            fontWeight: 'bold', 
-            margin: 0 
+          <p style={{
+            fontSize: '32px',
+            fontWeight: 'bold',
+            margin: 0
           }}>
             {formatCurrency(currentBalance)}
           </p>

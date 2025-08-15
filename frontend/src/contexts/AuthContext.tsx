@@ -53,7 +53,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setIsLoading(true);
       const response = await apiService.login({ email, password });
       await apiService.setAuthToken(response.access_token);
-      
+
       // TODO: Get user info from backend
       setUser({ id: 1, email, is_active: true, created_at: new Date().toISOString() });
     } catch (error) {
@@ -69,7 +69,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setIsLoading(true);
       const response = await apiService.register({ email, password });
       await apiService.setAuthToken(response.access_token);
-      
+
       // TODO: Get user info from backend
       setUser({ id: 1, email, is_active: true, created_at: new Date().toISOString() });
     } catch (error) {
