@@ -1,5 +1,6 @@
 from fastapi import APIRouter
-from app.api.v1.endpoints import auth, children, accounts
+
+from app.api.v1.endpoints import accounts, auth, children
 
 api_router = APIRouter()
 

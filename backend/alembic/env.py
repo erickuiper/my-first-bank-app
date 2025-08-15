@@ -1,7 +1,8 @@
-from logging.config import fileConfig
 import os
-from sqlalchemy import engine_from_config
-from sqlalchemy import pool
+from logging.config import fileConfig
+
+from sqlalchemy import engine_from_config, pool
+
 from alembic import context
 from app.core.database import Base
 from app.models import *  # Import all models
@@ -42,7 +43,7 @@ def run_migrations_offline() -> None:
     # Convert asyncpg to psycopg2 for Alembic
     if "asyncpg" in url:
         url = url.replace("asyncpg", "psycopg2")
-    
+
     context.configure(
         url=url,
         target_metadata=target_metadata,
@@ -66,10 +67,10 @@ def run_migrations_online() -> None:
     # Convert asyncpg to psycopg2 for Alembic
     if "asyncpg" in database_url:
         database_url = database_url.replace("asyncpg", "psycopg2")
-    
+
     # Override the config with the correct database URL
     config.set_main_option("sqlalchemy.url", database_url)
-    
+
     connectable = engine_from_config(
         config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",
@@ -77,9 +78,7 @@ def run_migrations_online() -> None:
     )
 
     with connectable.connect() as connection:
-        context.configure(
-            connection=connection, target_metadata=target_metadata
-        )
+        context.configure(connection=connection, target_metadata=target_metadata)
 
         with context.begin_transaction():
             context.run_migrations()
