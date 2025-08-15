@@ -8,8 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 # Skip all tests in CI/CD environment since they require a database connection
 pytestmark = pytest.mark.skipif(
-    os.getenv("CI") == "true",
-    reason="Skipping database tests in CI/CD - requires database connection"
+    os.getenv("CI") == "true", reason="Skipping database tests in CI/CD - requires database connection"
 )
 
 from app.core.config import settings

@@ -6,8 +6,7 @@ from httpx import AsyncClient
 
 # Skip all tests in CI/CD environment since they require a running backend server
 pytestmark = pytest.mark.skipif(
-    os.getenv("CI") == "true",
-    reason="Skipping integration tests in CI/CD - requires running backend server"
+    os.getenv("CI") == "true", reason="Skipping integration tests in CI/CD - requires running backend server"
 )
 
 

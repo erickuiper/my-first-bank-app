@@ -704,6 +704,10 @@ MVP version 0.2 will focus on enhancing the core banking functionality, improvin
 - **Recurring Bill Rules** (Priority 2)
   - Automated bill creation and categorization
   - Monthly bill scheduling and savings allocation
+- **In-Memory Database Testing** (Priority 3)
+  - SQLite in-memory database for CI/CD tests
+  - TestClient integration tests for API endpoints
+  - Remove CI/CD skip conditions
 - Account management improvements
 - Enhanced transaction system
 - Basic security enhancements
@@ -717,6 +721,10 @@ MVP version 0.2 will focus on enhancing the core banking functionality, improvin
 - Simple savings goals and progress tracking
 - Basic money lessons and tips
 - Simple charts and visualizations
+- **Test Infrastructure Enhancement**
+  - Complete in-memory database test coverage
+  - Performance testing and load testing
+  - Test coverage reporting and monitoring
 
 #### **Phase 4: Polish & Deploy (Weeks 13-16)**
 - Android app development and testing
@@ -731,10 +739,11 @@ MVP version 0.2 will focus on enhancing the core banking functionality, improvin
 - **User Engagement**: Children using app 3+ times per week
 - **Parent Satisfaction**: 4.0/5 stars from parents
 
-#### **Simple Technical Metrics**
-- **Basic Functionality**: All core features working
-- **Simple Performance**: App responds within 2 seconds
-- **Basic Reliability**: App works without crashes
+#### **Technical Metrics**
+- **Test Coverage**: 90%+ backend coverage with in-memory database
+- **CI/CD Success**: All tests pass in pipeline without skips
+- **Performance**: App responds within 2 seconds
+- **Reliability**: App works without crashes
 
 ### 📚 **Resources & Dependencies**
 
@@ -862,11 +871,12 @@ CREATE TABLE scheduled_bills (
 - **Simple History**: Basic view of past payments
 - **Parent Dashboard**: Simple overview of children's accounts
 
-#### **5. Simple Testing Strategy**
-- **Basic E2E Tests**: Simple user journeys for core features
-- **Unit Tests**: Basic business logic testing
-- **Simple Integration Tests**: Basic API endpoint testing
+#### **5. Comprehensive Testing Strategy**
+- **Unit Tests**: Business logic testing with in-memory database
+- **Integration Tests**: API endpoint testing with TestClient
+- **E2E Tests**: Full user journeys for core features
 - **Mobile Testing**: Android app functionality on physical devices
+- **CI/CD Tests**: In-memory database tests for pipeline validation
 
 #### **6. Implementation Priority & Effort Estimates**
 1. **Chore-Based Allowance System** (2-3 weeks)
@@ -880,17 +890,145 @@ CREATE TABLE scheduled_bills (
    - Automated bill creation
    - Frontend bill management
    
-3. **Background Jobs & Scheduler** (1-2 weeks)
+3. **In-Memory Database Testing** (1-2 weeks)
+   - SQLite in-memory database configuration
+   - TestClient integration test conversion
+   - Remove CI/CD skip conditions
+   - Ensure 90%+ test coverage
+   
+4. **Background Jobs & Scheduler** (1-2 weeks)
    - Pay run automation
    - Bill processing
    - Scheduled task management
    
-4. **Android App & Deployment** (2-3 weeks)
+5. **Android App & Deployment** (2-3 weeks)
    - React Native Android build
    - Heroku deployment
    - CI/CD pipeline updates
 
-**Total Estimated Effort: 6-10 weeks**
+**Total Estimated Effort: 7-12 weeks**
+
+#### **7. In-Memory Database Testing Implementation**
+
+##### **A. SQLite In-Memory Database Setup**
+```python
+# conftest.py
+import pytest
+from fastapi.testclient import TestClient
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
+
+from app.main import app
+from app.core.database import get_db, Base
+
+# Create in-memory SQLite database for testing
+SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
+
+engine = create_engine(
+    SQLALCHEMY_DATABASE_URL,
+    connect_args={"check_same_thread": False},
+    poolclass=StaticPool,
+)
+TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+@pytest.fixture(scope="function")
+def db_session():
+    """Create a fresh database session for each test"""
+    Base.metadata.create_all(bind=engine)
+    session = TestingSessionLocal()
+    yield session
+    session.close()
+    Base.metadata.drop_all(bind=engine)
+
+@pytest.fixture
+def client(db_session):
+    """Create test client with database session override"""
+    def override_get_db():
+        yield db_session
+    
+    app.dependency_overrides[get_db] = override_get_db
+    yield TestClient(app)
+    app.dependency_overrides.clear()
+```
+
+##### **B. TestClient Integration Tests**
+```python
+# test_api_integration.py
+import pytest
+from fastapi.testclient import TestClient
+
+def test_register_user(client: TestClient):
+    """Test user registration using TestClient"""
+    response = client.post(
+        "/api/v1/auth/register",
+        json={"email": "test@example.com", "password": "testpassword123"}
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert "access_token" in data
+
+def test_create_child_with_auth(client: TestClient):
+    """Test creating a child with authentication"""
+    # First register and login
+    register_response = client.post(
+        "/api/v1/auth/register",
+        json={"email": "parent@example.com", "password": "password123"}
+    )
+    token = register_response.json()["access_token"]
+    
+    # Create child with token
+    response = client.post(
+        "/api/v1/children/",
+        json={"name": "Test Child", "birthdate": "2015-01-01"},
+        headers={"Authorization": f"Bearer {token}"}
+    )
+    assert response.status_code == 200
+```
+
+##### **C. Business Logic Unit Tests**
+```python
+# test_business_logic.py
+import pytest
+from decimal import Decimal
+from app.services.allowance_service import AllowanceService
+from app.models.allowance_rule import AllowanceRule
+from app.models.chore import Chore
+
+def test_allowance_calculation_with_penalties():
+    """Test allowance calculation with chore penalties"""
+    service = AllowanceService()
+    
+    # Base allowance: $5.00
+    base_amount = Decimal("500")
+    # Penalty per missed chore: $0.25
+    penalty_per_chore = Decimal("25")
+    # Missed 2 chores
+    missed_chores = 2
+    
+    earned_amount = service.calculate_earned_allowance(
+        base_amount, penalty_per_chore, missed_chores
+    )
+    
+    # Expected: $5.00 - ($0.25 * 2) = $4.50
+    expected = Decimal("450")
+    assert earned_amount == expected
+```
+
+##### **D. Benefits of In-Memory Testing**
+- **Fast Execution**: No database connection overhead
+- **Isolated Tests**: Each test gets a fresh database
+- **CI/CD Compatible**: No external database dependencies
+- **Realistic Testing**: Tests actual database operations
+- **Coverage**: Can test all database interactions
+- **Reliability**: No network or connection issues
+
+##### **E. Migration from Current Tests**
+1. **Phase 1**: Add in-memory database configuration
+2. **Phase 2**: Convert existing httpx tests to TestClient
+3. **Phase 3**: Remove CI/CD skip conditions
+4. **Phase 4**: Add comprehensive business logic tests
+5. **Phase 5**: Achieve 90%+ test coverage
 
 ---
 
