@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 test.describe('Frontend Diagnostic Tests', () => {
   test('should verify application is working properly', async ({ page }) => {
     // Navigate to the frontend
-    await page.goto('http://localhost:3000/');
+    await page.goto('/');
     
     // Wait for the page to load
     await page.waitForLoadState('networkidle');
@@ -63,7 +63,7 @@ test.describe('Frontend Diagnostic Tests', () => {
   });
 
   test('should check for specific React Native Paper errors', async ({ page }) => {
-    await page.goto('http://localhost:3000/');
+    await page.goto('/');
     
     // Check for React Native Paper related errors
     const paperErrors: string[] = [];
@@ -87,7 +87,7 @@ test.describe('Frontend Diagnostic Tests', () => {
   });
 
   test('should check for JavaScript bundle loading issues', async ({ page }) => {
-    await page.goto('http://localhost:3000/');
+    await page.goto('/');
     
     // Check if JavaScript bundles are loading
     const jsErrors: string[] = [];
@@ -111,7 +111,7 @@ test.describe('Frontend Diagnostic Tests', () => {
   });
 
   test('should verify login form elements are present', async ({ page }) => {
-    await page.goto('http://localhost:3000/');
+    await page.goto('/');
     await page.waitForLoadState('networkidle');
     
     // Check if essential login form elements are present
@@ -124,7 +124,7 @@ test.describe('Frontend Diagnostic Tests', () => {
   });
 
   test('should verify navigation to registration works', async ({ page }) => {
-    await page.goto('http://localhost:3000/');
+    await page.goto('/');
     await page.waitForLoadState('networkidle');
     
     // Click on sign up link

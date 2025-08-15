@@ -13,7 +13,7 @@ from app.models.user import User
 
 
 @pytest.mark.asyncio
-async def test_deposit_amount_validation():
+async def test_deposit_amount_validation() -> None:
     """Test deposit amount validation"""
     # Test minimum amount
     assert settings.MIN_DEPOSIT_AMOUNT_CENTS >= 1
@@ -23,7 +23,7 @@ async def test_deposit_amount_validation():
 
 
 @pytest.mark.asyncio
-async def test_concurrent_deposits(db_session: AsyncSession):
+async def test_concurrent_deposits(db_session: AsyncSession) -> None:
     """Test that concurrent deposits produce consistent final balance"""
     # Create a test account
     account = Account(account_type="checking", balance_cents=Decimal(0), child_id=1)
@@ -35,7 +35,7 @@ async def test_concurrent_deposits(db_session: AsyncSession):
     deposit_amounts = [1000, 2000, 3000, 4000, 5000]  # $10, $20, $30, $40, $50
     expected_final_balance = sum(deposit_amounts)
 
-    async def make_deposit(amount: int, idempotency_key: str):
+    async def make_deposit(amount: int, idempotency_key: str) -> Decimal:
         # Simulate deposit transaction
         transaction = Transaction(
             amount_cents=Decimal(amount),
@@ -66,7 +66,7 @@ async def test_concurrent_deposits(db_session: AsyncSession):
 
 
 @pytest.mark.asyncio
-async def test_idempotency(db_session: AsyncSession):
+async def test_idempotency(db_session: AsyncSession) -> None:
     """Test that duplicate idempotency keys don't create duplicate transactions"""
     # Create a test account
     account = Account(account_type="checking", balance_cents=Decimal(0), child_id=1)
@@ -113,7 +113,7 @@ async def test_idempotency(db_session: AsyncSession):
 
 
 @pytest.mark.asyncio
-async def test_deposit_logic(db_session):
+async def test_deposit_logic(db_session) -> None:
     """Test deposit logic with database session"""
     # Create test data
     user = User(email="test@example.com", hashed_password="hashed")

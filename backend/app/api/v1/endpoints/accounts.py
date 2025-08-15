@@ -43,7 +43,7 @@ async def deposit(
     transaction_data: TransactionCreate,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
-):
+) -> BalanceUpdate:
     # Verify account access
     account = await verify_account_access(account_id, current_user, db)
 
@@ -70,11 +70,11 @@ async def deposit(
         return BalanceUpdate(
             new_balance_cents=account.balance_cents,
             transaction=TransactionResponse(
-                id=existing.id,
+                id=int(existing.id),
                 amount_cents=existing.amount_cents,
-                transaction_type=existing.transaction_type,
-                idempotency_key=existing.idempotency_key,
-                account_id=existing.account_id,
+                transaction_type=str(existing.transaction_type),
+                idempotency_key=str(existing.idempotency_key),
+                account_id=int(existing.account_id),
                 created_at=existing.created_at,
             ),
         )
@@ -99,11 +99,11 @@ async def deposit(
     return BalanceUpdate(
         new_balance_cents=account.balance_cents,
         transaction=TransactionResponse(
-            id=new_transaction.id,
+            id=int(new_transaction.id),
             amount_cents=new_transaction.amount_cents,
-            transaction_type=new_transaction.transaction_type,
-            idempotency_key=new_transaction.idempotency_key,
-            account_id=new_transaction.account_id,
+            transaction_type=str(new_transaction.transaction_type),
+            idempotency_key=str(new_transaction.idempotency_key),
+            account_id=int(new_transaction.account_id),
             created_at=new_transaction.created_at,
         ),
     )
@@ -116,7 +116,7 @@ async def get_transactions(
     cursor: Optional[str] = Query(None),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
-):
+) -> TransactionList:
     # Verify account access
     await verify_account_access(account_id, current_user, db)
 

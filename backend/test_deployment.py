@@ -10,7 +10,7 @@ import sys
 import requests
 
 
-def test_endpoint(base_url, endpoint, expected_status=200):
+def test_endpoint(base_url: str, endpoint: str, expected_status: int = 200) -> bool:
     """Test a specific endpoint"""
     url = f"{base_url}{endpoint}"
     try:
@@ -26,16 +26,17 @@ def test_endpoint(base_url, endpoint, expected_status=200):
         return False
 
 
-def main():
+def main() -> int:
     # Get the app URL from command line or environment
     if len(sys.argv) > 1:
         app_url = sys.argv[1]
     else:
-        app_url = os.getenv("HEROKU_APP_URL")
-        if not app_url:
-            print("❌ Please provide the Heroku app URL as an argument or " "set HEROKU_APP_URL environment variable")
+        app_url_env = os.getenv("HEROKU_APP_URL")
+        if not app_url_env:
+            print("❌ Please provide the Heroku app URL as an argument or set HEROKU_APP_URL environment variable")
             print("Usage: python test_deployment.py https://your-app-name.herokuapp.com")
             sys.exit(1)
+        app_url = app_url_env
 
     # Ensure URL has proper format
     if not app_url.startswith("http"):

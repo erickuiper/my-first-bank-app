@@ -198,9 +198,9 @@ def main():
             print(f"   State: {project['state']}")
             if project.get('description'):
                 print(f"   Description: {project['description']}")
-                    if project.get('teams', {}).get('nodes'):
-            teams = [f"{team['name']} ({team['key']})" for team in project['teams']['nodes']]
-            print(f"   Teams: {', '.join(teams)}")
+            if project.get('teams', {}).get('nodes'):
+                project_teams = [f"{team['name']} ({team['key']})" for team in project['teams']['nodes']]
+                print(f"   Teams: {', '.join(project_teams)}")
             print()
     else:
         print("   No projects found or error occurred")

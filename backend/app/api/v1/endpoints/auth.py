@@ -11,7 +11,7 @@ router = APIRouter()
 
 
 @router.post("/register", response_model=Token)
-async def register(user_data: UserCreate, db: AsyncSession = Depends(get_db)):
+async def register(user_data: UserCreate, db: AsyncSession = Depends(get_db)) -> Token:
     # Check if user already exists
     result = await db.execute(select(User).where(User.email == user_data.email))
     if result.scalar_one_or_none():
@@ -27,16 +27,16 @@ async def register(user_data: UserCreate, db: AsyncSession = Depends(get_db)):
 
     # Create access token
     access_token = create_access_token(data={"sub": user_data.email})
-    return {"access_token": access_token, "token_type": "bearer"}
+    return Token(access_token=access_token, token_type="bearer")
 
 
 @router.post("/login", response_model=Token)
-async def login(user_data: UserLogin, db: AsyncSession = Depends(get_db)):
+async def login(user_data: UserLogin, db: AsyncSession = Depends(get_db)) -> Token:
     # Find user
     result = await db.execute(select(User).where(User.email == user_data.email))
     user = result.scalar_one_or_none()
 
-    if not user or not verify_password(user_data.password, user.hashed_password):
+    if not user or not verify_password(user_data.password, str(user.hashed_password)):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
@@ -45,4 +45,4 @@ async def login(user_data: UserLogin, db: AsyncSession = Depends(get_db)):
 
     # Create access token
     access_token = create_access_token(data={"sub": user.email})
-    return {"access_token": access_token, "token_type": "bearer"}
+    return Token(access_token=access_token, token_type="bearer")
