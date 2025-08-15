@@ -607,6 +607,8 @@ MVP version 0.2 will focus on enhancing the core banking functionality, improvin
 - **Account Transfers**: Internal transfers between user accounts
 - **Account Limits**: Configurable daily/monthly transaction limits
 - **Account Statements**: Monthly statements and transaction history export
+- **Chore-Based Allowance System**: Weekly allowance with chore completion tracking
+- **Recurring Bill Rules**: Automated bill creation and categorization
 
 #### 2. **Enhanced Transaction System**
 - **Transaction Categories**: Categorize transactions (food, entertainment, bills, etc.)
@@ -655,6 +657,8 @@ MVP version 0.2 will focus on enhancing the core banking functionality, improvin
 - **API Rate Limiting**: Prevent abuse and ensure fair usage
 - **Background Jobs**: Async processing for heavy operations
 - **Load Balancing**: Support for horizontal scaling
+- **Scheduled Pay Runs**: Automated weekly allowance calculations and deposits
+- **Chore Tracking System**: Monitor chore completion and calculate penalties
 
 #### 2. **Monitoring & Observability**
 - **Application Metrics**: Performance monitoring and alerting
@@ -707,6 +711,13 @@ MVP version 0.2 will focus on enhancing the core banking functionality, improvin
 ### 📋 **Implementation Phases**
 
 #### **Phase 1: Core Enhancements (Weeks 1-4)**
+- **Chore-Based Allowance System** (Priority 1)
+  - Weekly allowance rules and chore definitions
+  - Automated pay calculations and deposits
+  - Chore completion tracking and penalty system
+- **Recurring Bill Rules** (Priority 2)
+  - Automated bill creation and categorization
+  - Monthly bill scheduling and savings allocation
 - Account management improvements
 - Enhanced transaction system
 - Basic security enhancements
@@ -754,6 +765,150 @@ MVP version 0.2 will focus on enhancing the core banking functionality, improvin
 - Bank account linking APIs
 - Security and compliance tools
 - Monitoring and analytics platforms
+
+### 🚀 **MVP 0.2 Implementation Details**
+
+#### **1. Deployment & Infrastructure**
+- **Backend Deployment**: Deploy to Heroku using GitHub Actions CI/CD
+- **Android App**: Create native Android app for frontend testing on physical devices
+- **Database**: PostgreSQL with new models for chores, allowances, and bill rules
+
+#### **2. Core Feature Implementation**
+
+##### **A. Chore-Based Allowance System (Priority 1)**
+**User Stories:**
+- As a parent, I can define a weekly allowance rule for a child (base_amount_cents, frequency=weekly)
+- As a parent, I can define chores with expected completion per pay period and penalties (penalty_cents per missed chore)
+- On each scheduled pay run, the system calculates earned_allowance = base_amount - penalty * missed_chores, creates transactions, and deposits the earned amount into the designated account (checking by default)
+
+**Data Models:**
+```sql
+-- Allowance rules
+CREATE TABLE allowance_rules (
+    id UUID PRIMARY KEY,
+    child_id UUID REFERENCES children(id),
+    base_amount_cents INTEGER NOT NULL,
+    frequency VARCHAR(20) DEFAULT 'weekly',
+    penalty_per_chore_cents INTEGER DEFAULT 25,
+    active BOOLEAN DEFAULT true,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Chore definitions
+CREATE TABLE chores (
+    id UUID PRIMARY KEY,
+    child_id UUID REFERENCES children(id),
+    name VARCHAR(100) NOT NULL,
+    description TEXT,
+    expected_completions_per_period INTEGER DEFAULT 1,
+    penalty_cents INTEGER DEFAULT 25,
+    active BOOLEAN DEFAULT true,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Chore completions
+CREATE TABLE chore_completions (
+    id UUID PRIMARY KEY,
+    chore_id UUID REFERENCES chores(id),
+    child_id UUID REFERENCES children(id),
+    completed_at TIMESTAMP DEFAULT NOW(),
+    verified_by_parent BOOLEAN DEFAULT false,
+    notes TEXT
+);
+```
+
+**API Endpoints:**
+```python
+# Allowance management
+POST /api/v1/allowances/ - Create allowance rule
+GET /api/v1/allowances/{child_id} - Get child's allowance rules
+PUT /api/v1/allowances/{id} - Update allowance rule
+
+# Chore management
+POST /api/v1/chores/ - Create chore
+GET /api/v1/chores/{child_id} - Get child's chores
+PUT /api/v1/chores/{id} - Update chore
+POST /api/v1/chores/{id}/complete - Mark chore as completed
+
+# Pay runs
+POST /api/v1/pay-runs/ - Trigger manual pay run
+GET /api/v1/pay-runs/{child_id} - Get pay run history
+```
+
+##### **B. Recurring Bill Rules (Priority 2)**
+**User Stories:**
+- As a parent, I can define recurring bill rules (amount_cents, description, due_date rule e.g., last day of month) that create scheduled transactions which move money to savings (or just tag transactions as bills)
+
+**Data Models:**
+```sql
+-- Bill rules
+CREATE TABLE bill_rules (
+    id UUID PRIMARY KEY,
+    child_id UUID REFERENCES children(id),
+    name VARCHAR(100) NOT NULL,
+    amount_cents INTEGER NOT NULL,
+    description TEXT,
+    due_date_rule VARCHAR(50) NOT NULL, -- 'last_day_of_month', 'weekly', 'monthly'
+    category VARCHAR(50) DEFAULT 'bills',
+    target_account_id UUID REFERENCES accounts(id), -- Usually savings
+    active BOOLEAN DEFAULT true,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Scheduled bills
+CREATE TABLE scheduled_bills (
+    id UUID PRIMARY KEY,
+    bill_rule_id UUID REFERENCES bill_rules(id),
+    child_id UUID REFERENCES children(id),
+    amount_cents INTEGER NOT NULL,
+    due_date DATE NOT NULL,
+    status VARCHAR(20) DEFAULT 'pending', -- pending, paid, overdue
+    created_at TIMESTAMP DEFAULT NOW()
+);
+```
+
+#### **3. Background Jobs & Scheduler**
+- **Weekly Pay Runs**: Calculate allowances, apply penalties, create transactions
+- **Monthly Bill Processing**: Generate scheduled bills, move money to savings
+- **Chore Reminders**: Notify parents of incomplete chores before pay day
+- **Statement Generation**: Monthly financial summaries for parents
+
+#### **4. Frontend Screens & UX Flows**
+- **Chore Dashboard**: View, complete, and track chores
+- **Allowance Management**: Set up and modify allowance rules
+- **Bill Rules**: Configure recurring bills and categories
+- **Pay Run History**: Review past payments and deductions
+- **Parent Dashboard**: Overview of all children's financial status
+
+#### **5. Testing Strategy**
+- **Playwright E2E Tests**: Full user journeys for allowance and chore workflows
+- **Unit Tests**: Business logic for pay calculations and bill processing
+- **Integration Tests**: API endpoints and database operations
+- **Mobile Testing**: Android app functionality on physical devices
+
+#### **6. Implementation Priority & Effort Estimates**
+1. **Chore-Based Allowance System** (2-3 weeks)
+   - Database models and migrations
+   - Core business logic
+   - Basic API endpoints
+   - Frontend chore management
+   
+2. **Recurring Bill Rules** (1-2 weeks)
+   - Bill rule models and scheduling
+   - Automated bill creation
+   - Frontend bill management
+   
+3. **Background Jobs & Scheduler** (1-2 weeks)
+   - Pay run automation
+   - Bill processing
+   - Scheduled task management
+   
+4. **Android App & Deployment** (2-3 weeks)
+   - React Native Android build
+   - Heroku deployment
+   - CI/CD pipeline updates
+
+**Total Estimated Effort: 6-10 weeks**
 
 ---
 
