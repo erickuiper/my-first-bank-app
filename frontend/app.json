@@ -1,0 +1,29 @@
+{
+  "expo": {
+    "name": "My First Bank App",
+    "slug": "my-first-bank-app",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#2196F3"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.myfirstbankapp.mobile"
+    },
+    "android": {
+      "package": "com.myfirstbankapp.mobile"
+    },
+    "web": {
+      "bundler": "metro"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "your-project-id-here"
+      }
+    }
+  }
+}
