@@ -44,16 +44,16 @@ warn_unreachable = true
 strict_equality = true
 show_error_codes = true
 ignore_missing_imports = true
-        exclude = [
-            ".venv",
-            "venv",
-            "env",
-            "ENV",
-            "env.bak",
-            "venv.bak",
-            "site-packages",
-            ".git",
-            "__pycache__",
-            ".pytest_cache",
-            ".*egg-info"
-        ]
+exclude = [
+    ".venv",
+    "venv",
+    "env",
+    "ENV",
+    "env.bak",
+    "venv.bak",
+    "site-packages",
+    ".git",
+    "__pycache__",
+    ".pytest_cache",
+    ".*egg-info"
+]
