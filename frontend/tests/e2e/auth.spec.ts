@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Authentication', () => {
   test('should display login form', async ({ page }) => {
-    await page.goto('http://localhost:3000/');
+    await page.goto('/');
     
     // Wait for the page to load
     await page.waitForLoadState('networkidle');
@@ -16,7 +16,7 @@ test.describe('Authentication', () => {
   });
 
   test('should navigate to registration page', async ({ page }) => {
-    await page.goto('http://localhost:3000/');
+    await page.goto('/');
     await page.waitForLoadState('networkidle');
     
     // Click on the sign up link
@@ -40,7 +40,7 @@ test.describe('Authentication', () => {
   });
 
   test('should show validation errors for empty form submission', async ({ page }) => {
-    await page.goto('http://localhost:3000/');
+    await page.goto('/');
     await page.waitForLoadState('networkidle');
     
     // Try to submit empty form
