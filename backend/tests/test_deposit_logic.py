@@ -1,9 +1,16 @@
 import asyncio
+import os
 from datetime import date
 from decimal import Decimal
 
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
+
+# Skip all tests in CI/CD environment since they require a database connection
+pytestmark = pytest.mark.skipif(
+    os.getenv("CI") == "true",
+    reason="Skipping database tests in CI/CD - requires database connection"
+)
 
 from app.core.config import settings
 from app.models.account import Account
