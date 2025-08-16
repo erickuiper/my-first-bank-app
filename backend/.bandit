@@ -1,12 +1,6 @@
 # Bandit security configuration for My First Bank App
 # This file configures which security tests to run and which to skip
 
-# Skip specific test IDs that are not relevant for our use case
-skips: ['B101', 'B105']
-
-# B101: assert_used - We use assertions in tests, which is expected
-# B105: hardcoded_password_string - Test files contain test passwords, which is safe
-
 # Exclude virtual environment and cache directories
 exclude_dirs: ['.venv', '__pycache__', '.pytest_cache', '.mypy_cache']
 

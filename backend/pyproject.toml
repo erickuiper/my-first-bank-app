@@ -45,6 +45,7 @@ warn_unreachable = true
 strict_equality = true
 show_error_codes = true
 ignore_missing_imports = true
+plugins = ["sqlalchemy.ext.mypy.plugin"]
 exclude = [
     ".venv",
     "venv",
