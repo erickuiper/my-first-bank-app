@@ -45,7 +45,7 @@ class TestDepositLogic:
             from sqlalchemy import create_engine
             from sqlalchemy.orm import sessionmaker
             from sqlalchemy.pool import StaticPool
-            
+
             # Use the same database URL as the test configuration
             test_engine = create_engine(
                 "sqlite:///:memory:",
@@ -53,23 +53,24 @@ class TestDepositLogic:
                 poolclass=StaticPool,
                 echo=False,
             )
-            
+
             # Create tables in this engine
             from app.core.database import Base
+
             Base.metadata.create_all(test_engine)
-            
+
             TestingSessionLocal = sessionmaker(
                 test_engine,
                 expire_on_commit=False,
             )
-            
+
             with TestingSessionLocal() as session:
                 # Create the account in this session
                 new_account = Account(account_type="checking", balance_cents=Decimal(0), child_id=1)
                 session.add(new_account)
                 session.commit()
                 session.refresh(new_account)
-                
+
                 # Simulate deposit transaction
                 transaction = Transaction(
                     amount_cents=Decimal(amount),
@@ -82,18 +83,19 @@ class TestDepositLogic:
                 # Update balance atomically
                 new_account.balance_cents += Decimal(amount)  # type: ignore[assignment]
                 session.commit()
-                
+
                 # Clean up
                 test_engine.dispose()
 
         # Execute deposits concurrently
         import threading
+
         threads = []
         for i, amount in enumerate(deposit_amounts):
             thread = threading.Thread(target=make_deposit, args=(amount, f"key_{i}"))
             threads.append(thread)
             thread.start()
-        
+
         # Wait for all threads to complete
         for thread in threads:
             thread.join()
@@ -101,7 +103,7 @@ class TestDepositLogic:
         # Verify the original account is unchanged (since we used separate databases)
         db_session.refresh(account)
         assert account.balance_cents == Decimal(0)
-        
+
         # Test that the business logic works correctly by doing sequential deposits
         for i, amount in enumerate(deposit_amounts):
             transaction = Transaction(
@@ -112,10 +114,10 @@ class TestDepositLogic:
             )
             db_session.add(transaction)
             account.balance_cents += Decimal(amount)  # type: ignore[assignment]
-        
+
         db_session.commit()
         db_session.refresh(account)
-        
+
         # Verify final balance is correct
         assert account.balance_cents == Decimal(expected_final_balance)
 
