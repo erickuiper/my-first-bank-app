@@ -25,7 +25,8 @@ exclude = [
     ".git",
     "__pycache__",
     ".pytest_cache",
-    ".*egg-info"
+    ".*egg-info",
+    "alembic"
 ]
 
 [tool.mypy]
@@ -55,7 +56,8 @@ exclude = [
     ".git",
     "__pycache__",
     ".pytest_cache",
-    ".*egg-info"
+    ".*egg-info",
+    "alembic"
 ]
 
 [tool.pytest.ini_options]
@@ -65,3 +67,4 @@ python_classes = ["Test*"]
 python_functions = ["test_*"]
 addopts = "--strict-markers --strict-config"
 pythonpath = ["."]
+asyncio_mode = "auto"

@@ -4,22 +4,23 @@ Uses SQLite in-memory database for fast, isolated testing.
 """
 
 import asyncio
-from typing import AsyncGenerator, Generator
+from typing import Generator
 from unittest.mock import AsyncMock
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from app.core.database import Base, get_db
+from app.core.database import get_db, Base
 from app.main import app
 
-# Test database configuration
-TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
+# Test database configuration - use standard SQLite for better CI compatibility
+TEST_DATABASE_URL = "sqlite:///:memory:"
 
-# Create async engine for tests
-test_engine = create_async_engine(
+# Create engine for tests
+test_engine = create_engine(
     TEST_DATABASE_URL,
     connect_args={"check_same_thread": False},
     poolclass=StaticPool,
@@ -27,9 +28,9 @@ test_engine = create_async_engine(
 )
 
 # Create test session factory
-TestingSessionLocal = async_sessionmaker(
+TestingSessionLocal = sessionmaker(
     test_engine,
-    class_=AsyncSession,
+    class_=Session,
     expire_on_commit=False,
 )
 
@@ -43,43 +44,43 @@ def event_loop() -> Generator[asyncio.AbstractEventLoop, None, None]:
 
 
 @pytest.fixture(scope="session")
-async def setup_database() -> AsyncGenerator[None, None]:
+def setup_database() -> Generator[None, None, None]:
     """Set up test database schema."""
-    async with test_engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+    with test_engine.begin() as conn:
+        Base.metadata.create_all(conn)
     yield
-    await test_engine.dispose()
+    test_engine.dispose()
 
 
 @pytest.fixture
-async def db_session(setup_database) -> AsyncSession:
+def db_session(setup_database) -> Session:
     """Create a fresh database session for each test."""
-    async with TestingSessionLocal() as session:
+    with TestingSessionLocal() as session:
         yield session
         # Clean up any pending changes and close the session properly
         try:
-            await session.rollback()
+            session.rollback()
         except Exception:  # nosec B110
             # If rollback fails, just close the session
             pass
         finally:
-            await session.close()
+            session.close()
 
     # Clear the database between tests to ensure isolation
     from sqlalchemy import text
 
-    async with test_engine.begin() as conn:
-        await conn.run_sync(lambda sync_conn: sync_conn.execute(text("DELETE FROM transactions")))
-        await conn.run_sync(lambda sync_conn: sync_conn.execute(text("DELETE FROM accounts")))
-        await conn.run_sync(lambda sync_conn: sync_conn.execute(text("DELETE FROM children")))
-        await conn.run_sync(lambda sync_conn: sync_conn.execute(text("DELETE FROM users")))
+    with test_engine.begin() as conn:
+        conn.execute(text("DELETE FROM transactions"))
+        conn.execute(text("DELETE FROM accounts"))
+        conn.execute(text("DELETE FROM children"))
+        conn.execute(text("DELETE FROM users"))
 
 
 @pytest.fixture
-def client(db_session: AsyncSession) -> Generator[TestClient, None, None]:
+def client(db_session: Session) -> Generator[TestClient, None, None]:
     """Create a test client with in-memory database."""
 
-    async def override_get_db() -> AsyncGenerator[AsyncSession, None]:
+    def override_get_db() -> Generator[Session, None, None]:
         yield db_session
 
     app.dependency_overrides[get_db] = override_get_db

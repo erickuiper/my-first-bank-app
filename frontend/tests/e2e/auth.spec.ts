@@ -1,7 +1,6 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Authentication', () => {
-  test.skip(!!process.env.CI, 'Skipping authentication tests in CI/CD - requires running frontend');
 
   test('should display login form', async ({ page }) => {
     await page.goto('/');

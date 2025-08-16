@@ -3,12 +3,11 @@ Business logic tests using in-memory database.
 These tests can run in CI/CD without external database dependencies.
 """
 
-import asyncio
 from datetime import date
 from decimal import Decimal
 
 import pytest
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.models.account import Account
@@ -20,8 +19,7 @@ from app.models.user import User
 class TestDepositLogic:
     """Test deposit business logic."""
 
-    @pytest.mark.asyncio
-    async def test_deposit_amount_validation(self, db_session: AsyncSession) -> None:
+    def test_deposit_amount_validation(self, db_session: Session) -> None:
         """Test deposit amount validation."""
         # Test minimum amount
         assert settings.MIN_DEPOSIT_AMOUNT_CENTS >= 1
@@ -29,52 +27,49 @@ class TestDepositLogic:
         # Test maximum amount
         assert settings.MAX_DEPOSIT_AMOUNT_CENTS <= 1000000
 
-    @pytest.mark.asyncio
-    async def test_concurrent_deposits(self, db_session: AsyncSession) -> None:
+    def test_concurrent_deposits(self, db_session: Session) -> None:
         """Test that concurrent deposits produce consistent final balance."""
         # Create a test account
         account = Account(account_type="checking", balance_cents=Decimal(0), child_id=1)
         db_session.add(account)
-        await db_session.commit()
-        await db_session.refresh(account)
+        db_session.commit()
+        db_session.refresh(account)
 
         # Create multiple concurrent deposits
         deposit_amounts = [1000, 2000, 3000, 4000, 5000]  # $10, $20, $30, $40, $50
         expected_final_balance = sum(deposit_amounts)
 
-        async def make_deposit(amount: int, idempotency_key: str) -> None:
+        def make_deposit(amount: int, idempotency_key: str) -> None:
             """Make a deposit using a separate database session."""
             # Create a new session for this operation
-            from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+            from sqlalchemy import create_engine
+            from sqlalchemy.orm import sessionmaker
             from sqlalchemy.pool import StaticPool
-
+            
             # Use the same database URL as the test configuration
-            test_engine = create_async_engine(
-                "sqlite+aiosqlite:///:memory:",
+            test_engine = create_engine(
+                "sqlite:///:memory:",
                 connect_args={"check_same_thread": False},
                 poolclass=StaticPool,
                 echo=False,
             )
-
+            
             # Create tables in this engine
-            async with test_engine.begin() as conn:
-                from app.core.database import Base
-
-                await conn.run_sync(Base.metadata.create_all)
-
-            TestingSessionLocal = async_sessionmaker(
+            from app.core.database import Base
+            Base.metadata.create_all(test_engine)
+            
+            TestingSessionLocal = sessionmaker(
                 test_engine,
-                class_=AsyncSession,
                 expire_on_commit=False,
             )
-
-            async with TestingSessionLocal() as session:
+            
+            with TestingSessionLocal() as session:
                 # Create the account in this session
                 new_account = Account(account_type="checking", balance_cents=Decimal(0), child_id=1)
                 session.add(new_account)
-                await session.commit()
-                await session.refresh(new_account)
-
+                session.commit()
+                session.refresh(new_account)
+                
                 # Simulate deposit transaction
                 transaction = Transaction(
                     amount_cents=Decimal(amount),
@@ -86,20 +81,27 @@ class TestDepositLogic:
 
                 # Update balance atomically
                 new_account.balance_cents += Decimal(amount)  # type: ignore[assignment]
-                await session.commit()
-
+                session.commit()
+                
                 # Clean up
-                await test_engine.dispose()
+                test_engine.dispose()
 
         # Execute deposits concurrently
-        tasks = [make_deposit(amount, f"key_{i}") for i, amount in enumerate(deposit_amounts)]
-
-        await asyncio.gather(*tasks)
+        import threading
+        threads = []
+        for i, amount in enumerate(deposit_amounts):
+            thread = threading.Thread(target=make_deposit, args=(amount, f"key_{i}"))
+            threads.append(thread)
+            thread.start()
+        
+        # Wait for all threads to complete
+        for thread in threads:
+            thread.join()
 
         # Verify the original account is unchanged (since we used separate databases)
-        await db_session.refresh(account)
+        db_session.refresh(account)
         assert account.balance_cents == Decimal(0)
-
+        
         # Test that the business logic works correctly by doing sequential deposits
         for i, amount in enumerate(deposit_amounts):
             transaction = Transaction(
@@ -110,21 +112,20 @@ class TestDepositLogic:
             )
             db_session.add(transaction)
             account.balance_cents += Decimal(amount)  # type: ignore[assignment]
-
-        await db_session.commit()
-        await db_session.refresh(account)
-
+        
+        db_session.commit()
+        db_session.refresh(account)
+        
         # Verify final balance is correct
         assert account.balance_cents == Decimal(expected_final_balance)
 
-    @pytest.mark.asyncio
-    async def test_idempotency(self, db_session: AsyncSession) -> None:
+    def test_idempotency(self, db_session: Session) -> None:
         """Test that duplicate idempotency keys don't create duplicate transactions."""
         # Create a test account
         account = Account(account_type="checking", balance_cents=Decimal(0), child_id=1)
         db_session.add(account)
-        await db_session.commit()
-        await db_session.refresh(account)
+        db_session.commit()
+        db_session.refresh(account)
 
         idempotency_key = "test_key_123"
         deposit_amount = 1000
@@ -138,7 +139,7 @@ class TestDepositLogic:
         )
         db_session.add(transaction1)
         account.balance_cents += Decimal(deposit_amount)  # type: ignore[assignment]
-        await db_session.commit()
+        db_session.commit()
 
         # Try to create duplicate with same idempotency key
         with pytest.raises(Exception):  # Should fail due to unique constraint
@@ -149,40 +150,39 @@ class TestDepositLogic:
                 account_id=account.id,
             )
             db_session.add(transaction2)
-            await db_session.commit()
+            db_session.commit()
 
         # Rollback the failed transaction to clean up the session
-        await db_session.rollback()
+        db_session.rollback()
 
         # Verify only one transaction exists
         from sqlalchemy import func, select
 
-        result = await db_session.execute(select(func.count()).where(Transaction.idempotency_key == idempotency_key))
+        result = db_session.execute(select(func.count()).where(Transaction.idempotency_key == idempotency_key))
         count = result.scalar()
         assert count == 1
 
         # Verify balance was only updated once
-        await db_session.refresh(account)
+        db_session.refresh(account)
         assert account.balance_cents == Decimal(deposit_amount)
 
-    @pytest.mark.asyncio
-    async def test_deposit_logic(self, db_session: AsyncSession) -> None:
+    def test_deposit_logic(self, db_session: Session) -> None:
         """Test deposit logic with database session."""
         # Create test data
         user = User(email="test@example.com", hashed_password="hashed")  # nosec B106
         db_session.add(user)
-        await db_session.commit()
-        await db_session.refresh(user)
+        db_session.commit()
+        db_session.refresh(user)
 
         child = Child(name="Test Child", birthdate=date(2015, 1, 1), parent_id=user.id)
         db_session.add(child)
-        await db_session.commit()
-        await db_session.refresh(child)
+        db_session.commit()
+        db_session.refresh(child)
 
         account = Account(account_type="checking", balance_cents=Decimal("0"), child_id=child.id)
         db_session.add(account)
-        await db_session.commit()
-        await db_session.refresh(account)
+        db_session.commit()
+        db_session.refresh(account)
 
         # Test deposit
         transaction = Transaction(
@@ -196,33 +196,32 @@ class TestDepositLogic:
         # Update account balance
         account.balance_cents += Decimal("1000")  # type: ignore[assignment]
 
-        await db_session.commit()
-        await db_session.refresh(account)
-        await db_session.refresh(transaction)
+        db_session.commit()
+        db_session.refresh(account)
+        db_session.refresh(transaction)
 
         # Verify results
         assert account.balance_cents == Decimal("1000")
         assert transaction.amount_cents == Decimal("1000")
         assert transaction.transaction_type == "deposit"
 
-    @pytest.mark.asyncio
-    async def test_account_balance_consistency(self, db_session: AsyncSession) -> None:
+    def test_account_balance_consistency(self, db_session: Session) -> None:
         """Test that account balance remains consistent across operations."""
         # Create test data with unique identifiers
         user = User(email="test_balance@example.com", hashed_password="hashed")  # nosec B106
         db_session.add(user)
-        await db_session.commit()
-        await db_session.refresh(user)
+        db_session.commit()
+        db_session.refresh(user)
 
         child = Child(name="Test Balance Child", birthdate=date(2015, 1, 1), parent_id=user.id)
         db_session.add(child)
-        await db_session.commit()
-        await db_session.refresh(child)
+        db_session.commit()
+        db_session.refresh(child)
 
         account = Account(account_type="checking", balance_cents=Decimal("0"), child_id=child.id)
         db_session.add(account)
-        await db_session.commit()
-        await db_session.refresh(account)
+        db_session.commit()
+        db_session.refresh(account)
 
         # Make multiple deposits
         deposits = [
@@ -244,30 +243,29 @@ class TestDepositLogic:
 
         # Update account balance
         account.balance_cents = expected_balance
-        await db_session.commit()
-        await db_session.refresh(account)
+        db_session.commit()
+        db_session.refresh(account)
 
         # Verify final balance
         assert account.balance_cents == expected_balance
 
-    @pytest.mark.asyncio
-    async def test_transaction_audit_trail(self, db_session: AsyncSession) -> None:
+    def test_transaction_audit_trail(self, db_session: Session) -> None:
         """Test that transactions create proper audit trail."""
         # Create test data with unique identifiers
         user = User(email="test_audit@example.com", hashed_password="hashed")  # nosec B106
         db_session.add(user)
-        await db_session.commit()
-        await db_session.refresh(user)
+        db_session.commit()
+        db_session.refresh(user)
 
         child = Child(name="Test Audit Child", birthdate=date(2015, 1, 1), parent_id=user.id)
         db_session.add(child)
-        await db_session.commit()
-        await db_session.refresh(child)
+        db_session.commit()
+        db_session.refresh(child)
 
         account = Account(account_type="checking", balance_cents=Decimal("0"), child_id=child.id)
         db_session.add(account)
-        await db_session.commit()
-        await db_session.refresh(account)
+        db_session.commit()
+        db_session.refresh(account)
 
         # Create a transaction
         transaction = Transaction(
@@ -277,8 +275,8 @@ class TestDepositLogic:
             account_id=account.id,
         )
         db_session.add(transaction)
-        await db_session.commit()
-        await db_session.refresh(transaction)
+        db_session.commit()
+        db_session.refresh(transaction)
 
         # Verify transaction was created with proper audit fields
         assert transaction.id is not None
@@ -287,19 +285,18 @@ class TestDepositLogic:
         assert transaction.transaction_type == "deposit"
         assert transaction.account_id == account.id
 
-    @pytest.mark.asyncio
-    async def test_multiple_accounts_per_child(self, db_session: AsyncSession) -> None:
+    def test_multiple_accounts_per_child(self, db_session: Session) -> None:
         """Test that children can have multiple account types."""
         # Create test data with unique identifiers
         user = User(email="test_multiple@example.com", hashed_password="hashed")  # nosec B106
         db_session.add(user)
-        await db_session.commit()
-        await db_session.refresh(user)
+        db_session.commit()
+        db_session.refresh(user)
 
         child = Child(name="Test Multiple Child", birthdate=date(2015, 1, 1), parent_id=user.id)
         db_session.add(child)
-        await db_session.commit()
-        await db_session.refresh(child)
+        db_session.commit()
+        db_session.refresh(child)
 
         # Create multiple accounts for the same child
         checking_account = Account(account_type="checking", balance_cents=Decimal("0"), child_id=child.id)
@@ -307,7 +304,7 @@ class TestDepositLogic:
         investment_account = Account(account_type="investment", balance_cents=Decimal("0"), child_id=child.id)
 
         db_session.add_all([checking_account, savings_account, investment_account])
-        await db_session.commit()
+        db_session.commit()
 
         # Verify all accounts were created
         assert checking_account.id is not None

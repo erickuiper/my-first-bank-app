@@ -1,8 +1,7 @@
 import { test, expect } from '@playwright/test';
 
-// Skip diagnostic tests in CI/CD since they require a running frontend
+// Frontend diagnostic tests - can run in CI/CD with proper setup
 test.describe('Frontend Diagnostic Tests', () => {
-  test.skip(!!process.env.CI, 'Skipping diagnostic tests in CI/CD - requires running frontend');
 
   test('should verify application is working properly', async ({ page }) => {
     // Navigate to the frontend
