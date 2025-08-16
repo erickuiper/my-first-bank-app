@@ -119,9 +119,9 @@ repos:
     hooks:
       - id: bandit
         name: Bandit security check
-        args: [-r, backend/, -s, B101, -x, backend/.venv]
+        args: ["-r", "backend/app/", "-x", "backend/.venv"]
         types: [python]
-        files: ^backend/
+        files: ^backend/app/
         pass_filenames: false
         always_run: true
 
