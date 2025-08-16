@@ -13,7 +13,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from app.core.database import get_db, Base
+from app.core.database import Base, get_db
 from app.main import app
 
 # Test database configuration - use standard SQLite for better CI compatibility
