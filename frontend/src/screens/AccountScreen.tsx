@@ -283,7 +283,10 @@ const AccountScreen: React.FC<AccountScreenProps> = ({ navigation, route }) => {
             mode="contained"
             onPress={() => navigation.navigate('Deposit', {
               accountId,
-              accountType
+              accountType,
+              currentBalance: transactions.reduce((sum, t) =>
+                t.transaction_type === 'deposit' ? sum + t.amount_cents : sum - t.amount_cents, 0
+              )
             })}
             style={styles.actionButton}
           >

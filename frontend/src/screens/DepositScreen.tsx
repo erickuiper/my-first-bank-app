@@ -26,11 +26,11 @@ interface DepositScreenProps {
   navigation: any;
 }
 
-const DepositScreen: React.FC<DepositScreenProps> = ({ route, navigation }) => {
+const DepositScreen = ({ route, navigation }: DepositScreenProps) => {
   const { accountId, accountType, currentBalance } = route.params;
   const [amount, setAmount] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { theme } = useTheme();
+  const theme = useTheme();
 
   const handleDeposit = async () => {
     const amountCents = Math.round(parseFloat(amount) * 100);

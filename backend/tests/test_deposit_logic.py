@@ -52,10 +52,10 @@ async def test_concurrent_deposits(db_session: AsyncSession) -> None:
         db_session.add(transaction)
 
         # Update balance atomically
-        account.balance_cents += Decimal(amount)
+        account.balance_cents += Decimal(amount)  # type: ignore[assignment]
         await db_session.commit()
         await db_session.refresh(account)
-        return account.balance_cents
+        return account.balance_cents  # type: ignore[return-value]
 
     # Execute deposits concurrently
     tasks = [make_deposit(amount, f"key_{i}") for i, amount in enumerate(deposit_amounts)]
@@ -91,7 +91,7 @@ async def test_idempotency(db_session: AsyncSession) -> None:
         account_id=account.id,
     )
     db_session.add(transaction1)
-    account.balance_cents += Decimal(deposit_amount)
+    account.balance_cents += Decimal(deposit_amount)  # type: ignore[assignment]
     await db_session.commit()
 
     # Try to create duplicate with same idempotency key
@@ -106,10 +106,9 @@ async def test_idempotency(db_session: AsyncSession) -> None:
         await db_session.commit()
 
     # Verify only one transaction exists
-    result = await db_session.execute(
-        "SELECT COUNT(*) FROM transactions WHERE idempotency_key = :key",
-        {"key": idempotency_key},
-    )
+    from sqlalchemy import func, select
+
+    result = await db_session.execute(select(func.count()).where(Transaction.idempotency_key == idempotency_key))
     count = result.scalar()
     assert count == 1
 
@@ -119,7 +118,7 @@ async def test_idempotency(db_session: AsyncSession) -> None:
 
 
 @pytest.mark.asyncio
-async def test_deposit_logic(db_session) -> None:
+async def test_deposit_logic(db_session: AsyncSession) -> None:
     """Test deposit logic with database session"""
     # Create test data
     user = User(email="test@example.com", hashed_password="hashed")  # nosec B106
@@ -147,7 +146,7 @@ async def test_deposit_logic(db_session) -> None:
     db_session.add(transaction)
 
     # Update account balance
-    account.balance_cents += Decimal("1000")
+    account.balance_cents += Decimal("1000")  # type: ignore[assignment]
 
     await db_session.commit()
     await db_session.refresh(account)

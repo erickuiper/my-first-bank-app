@@ -30,7 +30,7 @@ repos:
         types: [python]
         files: ^backend/
 
-  # MyPy type checking (temporarily disabled - will re-enable after fixing type errors)
+  # MyPy type checking (temporarily disabled - will re-enable after fixing remaining decorator issues)
   # - repo: https://github.com/pre-commit/mirrors-mypy
   #   rev: v1.8.0
   #   hooks:
@@ -52,48 +52,43 @@ repos:
         always_run: true
         stages: [commit]
 
-  # Frontend quality checks (temporarily disabled - will re-enable after fixing permission issues)
-  # - repo: local
-  #   hooks:
-  #     - id: frontend-lint
-  #       name: Frontend ESLint
-  #       entry: bash -c 'cd frontend && npm run lint'
-  #       language: system
-  #       pass_filenames: false
-  #       always_run: true
-  #       stages: [commit]
-  #
-  # - repo: local
-  #   hooks:
-  #     - id: frontend-type-check
-  #       name: Frontend TypeScript check
-  #       entry: bash -c 'cd frontend && npm run type-check'
-  #       entry: bash -c 'cd frontend && npm run type-check'
-  #       language: system
-  #       pass_filenames: false
-  #       always_run: true
-  #       stages: [commit]
-  #
-  # - repo: local
-  #   hooks:
-  #     - id: frontend-build
-  #       name: Frontend build verification
-  #       entry: bash -c 'cd frontend && npm run build'
-  #       language: system
-  #       pass_filenames: false
-  #       always_run: true
-  #       stages: [commit]
+  # Frontend quality checks
+  - repo: local
+    hooks:
+      - id: frontend-lint
+        name: Frontend ESLint
+        entry: bash -c 'cd frontend && npm run lint'
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [commit]
 
-  # Git hooks for commit message quality (temporarily disabled - will re-enable after fixing config)
-  # - repo: local
-  #   hooks:
-  #     - id: commitlint
-  #       name: Commit message linting
-  #       entry: bash -c 'cd frontend && npx commitlint --edit $1'
-  #       language: system
-  #       stages: [commit-msg]
-  #       pass_filenames: false
-  #       always_run: true
+      - id: frontend-type-check
+        name: Frontend TypeScript check
+        entry: bash -c 'cd frontend && npm run type-check'
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [commit]
+
+      - id: frontend-build
+        name: Frontend build verification
+        entry: bash -c 'cd frontend && npm run build'
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [commit]
+
+  # Git hooks for commit message quality
+  - repo: local
+    hooks:
+      - id: commitlint
+        name: Commit message linting
+        entry: bash -c 'cd frontend && npx commitlint --edit $1'
+        language: system
+        stages: [commit-msg]
+        pass_filenames: false
+        always_run: true
 
   # File size and type checks
   - repo: https://github.com/pre-commit/pre-commit-hooks

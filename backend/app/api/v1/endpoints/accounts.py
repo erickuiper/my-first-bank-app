@@ -64,14 +64,14 @@ async def deposit(
     if existing:
         # Return existing transaction info
         return BalanceUpdate(
-            new_balance_cents=account.balance_cents,
+            new_balance_cents=account.balance_cents,  # type: ignore[arg-type]
             transaction=TransactionResponse(
                 id=int(existing.id),
-                amount_cents=existing.amount_cents,
+                amount_cents=existing.amount_cents,  # type: ignore[arg-type]
                 transaction_type=str(existing.transaction_type),
                 idempotency_key=str(existing.idempotency_key),
                 account_id=int(existing.account_id),
-                created_at=existing.created_at,
+                created_at=existing.created_at,  # type: ignore[arg-type]
             ),
         )
 
@@ -86,21 +86,21 @@ async def deposit(
     db.add(new_transaction)
 
     # Update account balance
-    account.balance_cents += Decimal(transaction_data.amount_cents)
+    account.balance_cents += Decimal(transaction_data.amount_cents)  # type: ignore[assignment]
 
     await db.commit()
     await db.refresh(new_transaction)
     await db.refresh(account)
 
     return BalanceUpdate(
-        new_balance_cents=account.balance_cents,
+        new_balance_cents=account.balance_cents,  # type: ignore[arg-type]
         transaction=TransactionResponse(
             id=int(new_transaction.id),
-            amount_cents=new_transaction.amount_cents,
+            amount_cents=new_transaction.amount_cents,  # type: ignore[arg-type]
             transaction_type=str(new_transaction.transaction_type),
             idempotency_key=str(new_transaction.idempotency_key),
             account_id=int(new_transaction.account_id),
-            created_at=new_transaction.created_at,
+            created_at=new_transaction.created_at,  # type: ignore[arg-type]
         ),
     )
 
@@ -149,12 +149,12 @@ async def get_transactions(
     return TransactionList(
         transactions=[
             TransactionResponse(
-                id=t.id,
-                amount_cents=t.amount_cents,
-                transaction_type=t.transaction_type,
-                idempotency_key=t.idempotency_key,
-                account_id=t.account_id,
-                created_at=t.created_at,
+                id=t.id,  # type: ignore[arg-type]
+                amount_cents=t.amount_cents,  # type: ignore[arg-type]
+                transaction_type=t.transaction_type,  # type: ignore[arg-type]
+                idempotency_key=t.idempotency_key,  # type: ignore[arg-type]
+                account_id=t.account_id,  # type: ignore[arg-type]
+                created_at=t.created_at,  # type: ignore[arg-type]
             )
             for t in transactions
         ],

@@ -10,13 +10,13 @@ pytestmark = pytest.mark.skipif(
 )
 
 
-def get_unique_email():
+def get_unique_email() -> str:
     """Generate a unique email address for testing"""
     return f"test_{uuid.uuid4().hex[:8]}@example.com"
 
 
 @pytest.mark.asyncio
-async def test_register_user():
+async def test_register_user() -> None:
     """Test user registration"""
     async with AsyncClient(base_url="http://localhost:8000") as ac:
         # Use unique email to avoid conflicts
@@ -33,7 +33,7 @@ async def test_register_user():
 
 
 @pytest.mark.asyncio
-async def test_register_user_duplicate_email():
+async def test_register_user_duplicate_email() -> None:
     """Test user registration with duplicate email"""
     async with AsyncClient(base_url="http://localhost:8000") as ac:
         # First register a user
@@ -54,7 +54,7 @@ async def test_register_user_duplicate_email():
 
 
 @pytest.mark.asyncio
-async def test_register_user_invalid_email():
+async def test_register_user_invalid_email() -> None:
     """Test user registration with invalid email"""
     async with AsyncClient(base_url="http://localhost:8000") as ac:
         response = await ac.post(
@@ -65,7 +65,7 @@ async def test_register_user_invalid_email():
 
 
 @pytest.mark.asyncio
-async def test_login_user():
+async def test_login_user() -> None:
     """Test user login"""
     async with AsyncClient(base_url="http://localhost:8000") as ac:
         # First register a user, then login
@@ -89,7 +89,7 @@ async def test_login_user():
 
 
 @pytest.mark.asyncio
-async def test_login_user_wrong_password():
+async def test_login_user_wrong_password() -> None:
     """Test user login with wrong password"""
     async with AsyncClient(base_url="http://localhost:8000") as ac:
         # First register a user
@@ -111,7 +111,7 @@ async def test_login_user_wrong_password():
 
 
 @pytest.mark.asyncio
-async def test_login_user_nonexistent():
+async def test_login_user_nonexistent() -> None:
     """Test user login with nonexistent email"""
     async with AsyncClient(base_url="http://localhost:8000") as ac:
         response = await ac.post(
@@ -124,7 +124,7 @@ async def test_login_user_nonexistent():
 
 
 @pytest.mark.asyncio
-async def test_protected_endpoint_without_token():
+async def test_protected_endpoint_without_token() -> None:
     """Test that protected endpoints return 401 without token"""
     async with AsyncClient(base_url="http://localhost:8000") as ac:
         response = await ac.get("/api/v1/children/")
@@ -133,7 +133,7 @@ async def test_protected_endpoint_without_token():
 
 
 @pytest.mark.asyncio
-async def test_protected_endpoint_with_invalid_token():
+async def test_protected_endpoint_with_invalid_token() -> None:
     """Test that protected endpoints return 401 with invalid token"""
     async with AsyncClient(base_url="http://localhost:8000") as ac:
         response = await ac.get("/api/v1/children/", headers={"Authorization": "Bearer invalid_token"})
@@ -141,7 +141,7 @@ async def test_protected_endpoint_with_invalid_token():
 
 
 @pytest.mark.asyncio
-async def test_create_child_with_auth():
+async def test_create_child_with_auth() -> None:
     """Test creating a child with authentication"""
     # First register and login to get token
     async with AsyncClient(base_url="http://localhost:8000") as ac:
@@ -176,7 +176,7 @@ async def test_create_child_with_auth():
 
 
 @pytest.mark.asyncio
-async def test_create_child_invalid_data():
+async def test_create_child_invalid_data() -> None:
     """Test creating a child with invalid data"""
     async with AsyncClient(base_url="http://localhost:8000") as ac:
         # First register and login to get token
@@ -203,7 +203,7 @@ async def test_create_child_invalid_data():
 
 
 @pytest.mark.asyncio
-async def test_list_children():
+async def test_list_children() -> None:
     """Test listing children"""
     async with AsyncClient(base_url="http://localhost:8000") as ac:
         # First register and login to get token
@@ -229,7 +229,7 @@ async def test_list_children():
 
 
 @pytest.mark.asyncio
-async def test_transaction_pagination():
+async def test_transaction_pagination() -> None:
     """Test transaction pagination with cursor"""
     # First register and login to get token
     async with AsyncClient(base_url="http://localhost:8000") as ac:
@@ -272,7 +272,7 @@ async def test_transaction_pagination():
 
 
 @pytest.mark.asyncio
-async def test_transaction_pagination_with_cursor():
+async def test_transaction_pagination_with_cursor() -> None:
     """Test transaction pagination with cursor parameter"""
     # First register and login to get token
     async with AsyncClient(base_url="http://localhost:8000") as ac:
@@ -311,7 +311,7 @@ async def test_transaction_pagination_with_cursor():
 
 
 @pytest.mark.asyncio
-async def test_deposit_with_idempotency():
+async def test_deposit_with_idempotency() -> None:
     """Test deposit with idempotency key"""
     # First register and login to get token
     async with AsyncClient(base_url="http://localhost:8000") as ac:
@@ -354,7 +354,7 @@ async def test_deposit_with_idempotency():
 
 
 @pytest.mark.asyncio
-async def test_deposit_amount_validation():
+async def test_deposit_amount_validation() -> None:
     """Test deposit amount validation"""
     async with AsyncClient(base_url="http://localhost:8000") as ac:
         # First register and login to get token
@@ -395,7 +395,7 @@ async def test_deposit_amount_validation():
 
 
 @pytest.mark.asyncio
-async def test_deposit_duplicate_idempotency():
+async def test_deposit_duplicate_idempotency() -> None:
     """Test deposit with duplicate idempotency key returns existing transaction"""
     async with AsyncClient(base_url="http://localhost:8000") as ac:
         # First register and login to get token
@@ -448,7 +448,7 @@ async def test_deposit_duplicate_idempotency():
 
 
 @pytest.mark.asyncio
-async def test_deposit_invalid_account():
+async def test_deposit_invalid_account() -> None:
     """Test deposit with invalid account ID"""
     async with AsyncClient(base_url="http://localhost:8000") as ac:
         # First register and login to get token
@@ -479,7 +479,7 @@ async def test_deposit_invalid_account():
 
 
 @pytest.mark.asyncio
-async def test_deposit_unauthorized_account():
+async def test_deposit_unauthorized_account() -> None:
     """Test deposit to account that doesn't belong to current user"""
     async with AsyncClient(base_url="http://localhost:8000") as ac:
         # First register and login to get token
@@ -534,7 +534,7 @@ async def test_deposit_unauthorized_account():
 
 
 @pytest.mark.asyncio
-async def test_transactions_invalid_account():
+async def test_transactions_invalid_account() -> None:
     """Test getting transactions from invalid account ID"""
     async with AsyncClient(base_url="http://localhost:8000") as ac:
         # First register and login to get token
@@ -561,7 +561,7 @@ async def test_transactions_invalid_account():
 
 
 @pytest.mark.asyncio
-async def test_transactions_unauthorized_account():
+async def test_transactions_unauthorized_account() -> None:
     """Test getting transactions from account that doesn't belong to current user"""
     async with AsyncClient(base_url="http://localhost:8000") as ac:
         # First register and login to get token
@@ -612,7 +612,7 @@ async def test_transactions_unauthorized_account():
 
 
 @pytest.mark.asyncio
-async def test_deposit_max_amount_exceeded():
+async def test_deposit_max_amount_exceeded() -> None:
     """Test deposit with amount exceeding maximum limit"""
     async with AsyncClient(base_url="http://localhost:8000") as ac:
         # First register and login to get token
@@ -653,7 +653,7 @@ async def test_deposit_max_amount_exceeded():
 
 
 @pytest.mark.asyncio
-async def test_transactions_with_valid_cursor():
+async def test_transactions_with_valid_cursor() -> None:
     """Test transaction pagination with valid cursor"""
     async with AsyncClient(base_url="http://localhost:8000") as ac:
         # First register and login to get token

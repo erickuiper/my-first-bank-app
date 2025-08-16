@@ -19,5 +19,5 @@ module.exports = {
     'no-console': 'warn',
     'prefer-const': 'warn',
   },
-  ignorePatterns: ['**/*.ts', '**/*.tsx'], // Ignore TypeScript files for now
+  ignorePatterns: ['**/*.ts', '**/*.tsx', 'dist/**/*', 'node_modules/**/*'], // Ignore TypeScript files, dist, and node_modules
 };

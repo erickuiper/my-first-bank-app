@@ -21,7 +21,7 @@ export type RootStackParamList = {
   Dashboard: undefined;
   ChildProfile: { childId: number };
   Account: { accountId: number; accountType: string };
-  Deposit: { accountId: number; accountType: string };
+  Deposit: { accountId: number; accountType: string; currentBalance: number };
 };
 
 const Stack = createStackNavigator<RootStackParamList>();

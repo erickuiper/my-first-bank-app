@@ -310,7 +310,8 @@ const ChildProfileScreen: React.FC<ChildProfileScreenProps> = ({ navigation, rou
                     mode="contained"
                     onPress={() => navigation.navigate('Deposit', {
                       accountId: account.id,
-                      accountType: account.account_type
+                      accountType: account.account_type,
+                      currentBalance: account.balance_cents
                     })}
                     style={styles.actionButton}
                   >

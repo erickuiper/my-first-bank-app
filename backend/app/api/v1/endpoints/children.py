@@ -43,25 +43,25 @@ async def create_child(
     return ChildWithAccounts(
         id=int(db_child.id),
         name=str(db_child.name),
-        birthdate=db_child.birthdate,
+        birthdate=db_child.birthdate,  # type: ignore[arg-type]
         parent_id=int(db_child.parent_id),
-        created_at=db_child.created_at,
+        created_at=db_child.created_at,  # type: ignore[arg-type]
         accounts=[
             AccountResponse(
                 id=int(checking_account.id),
                 account_type=str(checking_account.account_type),
-                balance_cents=checking_account.balance_cents,
+                balance_cents=checking_account.balance_cents,  # type: ignore[arg-type]
                 child_id=int(checking_account.child_id),
-                created_at=checking_account.created_at,
-                updated_at=checking_account.updated_at,
+                created_at=checking_account.created_at,  # type: ignore[arg-type]
+                updated_at=checking_account.updated_at,  # type: ignore[arg-type]
             ),
             AccountResponse(
                 id=int(savings_account.id),
                 account_type=str(savings_account.account_type),
-                balance_cents=savings_account.balance_cents,
+                balance_cents=savings_account.balance_cents,  # type: ignore[arg-type]
                 child_id=int(savings_account.child_id),
-                created_at=savings_account.created_at,
-                updated_at=savings_account.updated_at,
+                created_at=savings_account.created_at,  # type: ignore[arg-type]
+                updated_at=savings_account.updated_at,  # type: ignore[arg-type]
             ),
         ],
     )
