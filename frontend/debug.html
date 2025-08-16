@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Frontend Debug</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .debug-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .error {
+            color: #d32f2f;
+            background-color: #ffebee;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .success {
+            color: #388e3c;
+            background-color: #e8f5e8;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        button {
+            background-color: #2196F3;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #1976D2;
+        }
+        pre {
+            background-color: #f5f5f5;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Frontend Debug Tool</h1>
+
+    <div class="debug-section">
+        <h2>1. Test Current Frontend</h2>
+        <p>Click the button below to test the current frontend at localhost:3000:</p>
+        <button onclick="testFrontend()">Test Frontend</button>
+        <div id="frontend-result"></div>
+    </div>
+
+    <div class="debug-section">
+        <h2>2. Console Error Analysis</h2>
+        <p>Click to analyze any console errors:</p>
+        <button onclick="analyzeConsoleErrors()">Analyze Console Errors</button>
+        <div id="console-analysis"></div>
+    </div>
+
+    <div class="debug-section">
+        <h2>3. Theme Context Debug</h2>
+        <p>Check if theme context is working:</p>
+        <button onclick="debugThemeContext()">Debug Theme Context</button>
+        <div id="theme-debug"></div>
+    </div>
+
+    <div class="debug-section">
+        <h2>4. React Component Tree</h2>
+        <p>Inspect React component tree:</p>
+        <button onclick="inspectReactTree()">Inspect React Tree</button>
+        <div id="react-tree"></div>
+    </div>
+
+    <script>
+        let consoleErrors = [];
+        let consoleWarnings = [];
+        let consoleLogs = [];
+
+        // Capture console messages
+        const originalConsoleError = console.error;
+        const originalConsoleWarn = console.warn;
+        const originalConsoleLog = console.log;
+
+        console.error = function(...args) {
+            consoleErrors.push({ type: 'error', args, timestamp: new Date().toISOString() });
+            originalConsoleError.apply(console, args);
+        };
+
+        console.warn = function(...args) {
+            consoleWarnings.push({ type: 'warn', args, timestamp: new Date().toISOString() });
+            originalConsoleWarn.apply(console, args);
+        };
+
+        console.log = function(...args) {
+            consoleLogs.push({ type: 'log', args, timestamp: new Date().toISOString() });
+            originalConsoleLog.apply(console, args);
+        };
+
+        async function testFrontend() {
+            const resultDiv = document.getElementById('frontend-result');
+            resultDiv.innerHTML = '<p>Testing frontend...</p>';
+
+            try {
+                const response = await fetch('http://localhost:3000/');
+                const html = await response.text();
+
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            <h3>✅ Frontend is accessible</h3>
+                            <p>Status: ${response.status} ${response.statusText}</p>
+                            <p>Content length: ${html.length} characters</p>
+                            <details>
+                                <summary>View HTML (first 500 chars)</summary>
+                                <pre>${html.substring(0, 500)}...</pre>
+                            </details>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="error">
+                            <h3>❌ Frontend error</h3>
+                            <p>Status: ${response.status} ${response.statusText}</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h3>❌ Connection failed</h3>
+                        <p>Error: ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        function analyzeConsoleErrors() {
+            const analysisDiv = document.getElementById('console-analysis');
+
+            if (consoleErrors.length === 0 && consoleWarnings.length === 0) {
+                analysisDiv.innerHTML = `
+                    <div class="success">
+                        <h3>✅ No console errors or warnings</h3>
+                    </div>
+                `;
+                return;
+            }
+
+            let analysis = '<h3>🔍 Console Analysis</h3>';
+
+            if (consoleErrors.length > 0) {
+                analysis += `<h4>❌ Errors (${consoleErrors.length}):</h4>`;
+                consoleErrors.forEach((error, index) => {
+                    analysis += `
+                        <div class="error">
+                            <strong>Error ${index + 1}:</strong> ${error.args.join(' ')}
+                            <br><small>Time: ${error.timestamp}</small>
+                        </div>
+                    `;
+                });
+            }
+
+            if (consoleWarnings.length > 0) {
+                analysis += `<h4>⚠️ Warnings (${consoleWarnings.length}):</h4>`;
+                consoleWarnings.forEach((warning, index) => {
+                    analysis += `
+                        <div class="error">
+                            <strong>Warning ${index + 1}:</strong> ${warning.args.join(' ')}
+                            <br><small>Time: ${warning.timestamp}</small>
+                        </div>
+                    `;
+                });
+            }
+
+            // Check for specific error patterns
+            const colorsError = consoleErrors.some(error =>
+                error.args.some(arg =>
+                    typeof arg === 'string' && arg.includes('Cannot read properties of undefined (reading \'colors\')')
+                )
+            );
+
+            if (colorsError) {
+                analysis += `
+                    <div class="error">
+                        <h4>🎯 FOUND THE ISSUE!</h4>
+                        <p>The error "Cannot read properties of undefined (reading 'colors')" has been detected.</p>
+                        <p>This suggests that the theme context is not properly initialized or the theme object is undefined.</p>
+                    </div>
+                `;
+            }
+
+            analysisDiv.innerHTML = analysis;
+        }
+
+        function debugThemeContext() {
+            const themeDiv = document.getElementById('theme-debug');
+            themeDiv.innerHTML = '<p>Debugging theme context...</p>';
+
+            // Try to access the theme context from the React app
+            try {
+                // Check if React DevTools are available
+                if (window.__REACT_DEVTOOLS_GLOBAL_HOOK__) {
+                    themeDiv.innerHTML = `
+                        <div class="success">
+                            <h3>✅ React DevTools available</h3>
+                            <p>You can use React DevTools to inspect the theme context.</p>
+                        </div>
+                    `;
+                } else {
+                    themeDiv.innerHTML = `
+                        <div class="error">
+                            <h3>❌ React DevTools not available</h3>
+                            <p>Install React DevTools browser extension to debug further.</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                themeDiv.innerHTML = `
+                    <div class="error">
+                        <h3>❌ Error accessing React internals</h3>
+                        <p>Error: ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        function inspectReactTree() {
+            const treeDiv = document.getElementById('react-tree');
+            treeDiv.innerHTML = '<p>Inspecting React tree...</p>';
+
+            try {
+                // Try to find React root
+                const rootElement = document.getElementById('root');
+                if (rootElement) {
+                    const children = rootElement.children;
+                    let tree = '<h3>🌳 React Root Element</h3>';
+                    tree += `<p>Root element found with ${children.length} children</p>`;
+
+                    if (children.length === 0) {
+                        tree += '<div class="error">❌ Root element has no children - this explains the whitescreen!</div>';
+                    } else {
+                        tree += '<div class="success">✅ Root element has children</div>';
+                        for (let i = 0; i < children.length; i++) {
+                            tree += `<p>Child ${i + 1}: ${children[i].tagName} - ${children[i].className || 'no class'}</p>`;
+                        }
+                    }
+
+                    treeDiv.innerHTML = tree;
+                } else {
+                    treeDiv.innerHTML = `
+                        <div class="error">
+                            <h3>❌ No React root element found</h3>
+                            <p>This suggests the React app is not mounting properly.</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                treeDiv.innerHTML = `
+                    <div class="error">
+                        <h3>❌ Error inspecting React tree</h3>
+                        <p>Error: ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Auto-run some tests on page load
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                analyzeConsoleErrors();
+                inspectReactTree();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>
