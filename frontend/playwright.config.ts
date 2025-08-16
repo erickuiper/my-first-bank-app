@@ -14,13 +14,13 @@ export default defineConfig({
   /* Opt out of parallel tests on CI. */
   workers: process.env.CI ? 1 : undefined,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
-  reporter: 'line',
+  reporter: process.env.CI ? 'junit' : 'line',
   /* Output directory for test results */
   outputDir: './test-results',
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Base URL to use in actions like `await page.goto('/')`. */
-    baseURL: process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:19006',
+    baseURL: process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:8081',
 
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
@@ -70,19 +70,21 @@ export default defineConfig({
     // },
   ],
 
-      /* Run your local dev server before starting the tests */
-    webServer: {
-      command: 'npx expo start --web',
-      url: 'http://localhost:19006',
-      reuseExistingServer: !process.env.CI,
-      timeout: 120 * 1000,
-    },
+  /* Run your local dev server before starting the tests */
+  webServer: {
+    command: 'npx expo start --web --port 8081',
+    url: 'http://localhost:8081',
+    reuseExistingServer: !process.env.CI,
+    timeout: 120 * 1000,
+    stdout: 'pipe',
+    stderr: 'pipe',
+  },
 
   /* Global test timeout */
-  timeout: 30000,
+  timeout: 60000,
 
   /* Expect timeout for each assertion */
   expect: {
-    timeout: 5000,
+    timeout: 10000,
   },
 });

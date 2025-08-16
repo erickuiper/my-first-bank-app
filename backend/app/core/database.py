@@ -18,4 +18,4 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
 
 # Import all models to ensure they are registered with the Base
 # This is necessary for creating tables in tests
-from app.models import User, Child, Account, Transaction  # noqa: F401, E402
+from app.models import Account, Child, Transaction, User  # noqa: F401, E402
