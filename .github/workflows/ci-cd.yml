@@ -138,11 +138,14 @@ jobs:
         cd frontend
         echo "🧪 Running Playwright tests..."
         # Start the frontend server for testing on port 8081
+        # Playwright will reuse this server instead of starting its own
         npm run web &
         echo "⏳ Waiting for server to start on port 8081..."
         sleep 45  # Wait longer for server to be fully ready
         # Check if server is responding
         curl -f http://localhost:8081/ || echo "⚠️ Server not responding, continuing anyway..."
+        # Set environment variable for Playwright to use existing server
+        export CI=true
         # Run Playwright tests with proper configuration
         npx playwright test --project=chromium
 
