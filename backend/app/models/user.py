@@ -17,3 +17,4 @@ class User(Base):
 
     # Relationships
     children = relationship("Child", back_populates="parent")
+    chore_verifications = relationship("ChoreCompletion", back_populates="verifier")
