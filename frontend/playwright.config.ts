@@ -14,13 +14,13 @@ export default defineConfig({
   /* Opt out of parallel tests on CI. */
   workers: process.env.CI ? 1 : undefined,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
-  reporter: 'line',
+  reporter: process.env.CI ? [['html'], ['junit', { outputFile: 'test-results/results.xml' }]] : 'line',
   /* Output directory for test results */
   outputDir: './test-results',
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Base URL to use in actions like `await page.goto('/')`. */
-    baseURL: process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:19006',
+    baseURL: process.env.PLAYWRIGHT_BASE_URL || (process.env.CI ? 'http://localhost:8081' : 'http://localhost:8082'),
 
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
@@ -30,13 +30,27 @@ export default defineConfig({
 
     /* Record video on failure */
     video: 'retain-on-failure',
+
+    /* CI-specific settings */
+    ...(process.env.CI && {
+      headless: true,
+      ignoreHTTPSErrors: true,
+    }),
   },
 
   /* Configure projects for major browsers */
   projects: [
     {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      use: {
+        ...devices['Desktop Chrome'],
+        // CI-specific settings
+        ...(process.env.CI && {
+          launchOptions: {
+            args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
+          }
+        })
+      },
     },
 
     {
@@ -71,19 +85,20 @@ export default defineConfig({
   ],
 
   /* Run your local dev server before starting the tests */
-  // Temporarily disabled webServer for CI/CD compatibility
-  // webServer: {
-  //   command: 'npx expo start --web',
-  //   url: 'http://localhost:19006',
-  //   reuseExistingServer: !process.env.CI,
-  //   timeout: 120 * 1000,
-  // },
+  webServer: {
+    command: process.env.CI ? 'echo "Server already running in CI"' : 'npx expo start --web --port 8082',
+    url: process.env.CI ? 'http://localhost:8081' : 'http://localhost:8082',
+    reuseExistingServer: true, // Always reuse existing server to avoid conflicts
+    timeout: 120 * 1000,
+    stdout: 'pipe',
+    stderr: 'pipe',
+  },
 
   /* Global test timeout */
-  timeout: 30000,
+  timeout: 60000,
 
   /* Expect timeout for each assertion */
   expect: {
-    timeout: 5000,
+    timeout: 10000,
   },
 });

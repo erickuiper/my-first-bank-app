@@ -14,3 +14,8 @@ async_session = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
     async with async_session() as session:
         yield session
+
+
+# Import all models to ensure they are registered with the Base
+# This is necessary for creating tables in tests
+from app.models import Account, Child, Transaction, User  # noqa: F401, E402

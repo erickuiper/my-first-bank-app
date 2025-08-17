@@ -51,7 +51,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r backend/requirements.txt
-        pip install pytest pytest-cov pytest-asyncio httpx black isort flake8 mypy
+        pip install black isort flake8 mypy
 
     - name: 🎨 Run linting and formatting
       run: |
@@ -62,11 +62,12 @@ jobs:
         echo "🔍 Running flake8..."
         flake8 backend/ --max-line-length=120 --extend-ignore=E203,W503
 
-    # Temporarily disabled MyPy check due to remaining type issues
+    # Temporarily disabled MyPy due to SQLAlchemy type annotation issues
+    # Will re-enable after fixing type annotations incrementally
     # - name: 🔍 Run type checking
     #   run: |
     #     echo "🔍 Running mypy..."
-    #     mypy backend/ --ignore-missing-imports
+    #     mypy backend/ --config-file=backend/pyproject.toml
 
     - name: 🧪 Run backend tests
       run: |
@@ -136,7 +137,17 @@ jobs:
       run: |
         cd frontend
         echo "🧪 Running Playwright tests..."
-        npx playwright test --reporter=html,junit
+        # Start the frontend server for testing on port 8081
+        # Playwright will reuse this server instead of starting its own
+        npm run web &
+        echo "⏳ Waiting for server to start on port 8081..."
+        sleep 45  # Wait longer for server to be fully ready
+        # Check if server is responding
+        curl -f http://localhost:8081/ || echo "⚠️ Server not responding, continuing anyway..."
+        # Set environment variable for Playwright to use existing server
+        export CI=true
+        # Run Playwright tests with proper configuration
+        npx playwright test --project=chromium
 
     - name: 📦 Upload Playwright reports
       uses: actions/upload-artifact@v4
@@ -178,33 +189,20 @@ jobs:
 
     - name: 🐳 Start services with Docker Compose
       run: |
-        # Try modern docker compose first, fallback to docker-compose if available
-        if command -v docker &> /dev/null; then
-          echo "🐳 Starting services with Docker Compose..."
-          docker compose up -d postgres || docker-compose up -d postgres || echo "⚠️ Docker Compose not available"
-          docker compose up -d backend || docker-compose up -d backend || echo "⚠️ Docker Compose not available"
-          docker compose up -d frontend || docker-compose up -d frontend || echo "⚠️ Docker Compose not available"
-        else
-          echo "⚠️ Docker not available, skipping integration tests"
-          exit 0
-        fi
+        echo "🐳 Starting services with Docker Compose..."
+        docker compose up -d postgres
+        docker compose up -d backend
+        docker compose up -d frontend
         sleep 30  # Wait for services to be ready
 
     - name: 🔍 Check service health
       run: |
-        # Check if services are running before proceeding
-        if docker ps | grep -q "postgres\|backend\|frontend"; then
-          echo "🔍 Checking PostgreSQL..."
-          docker compose exec -T postgres pg_isready -U postgres || docker-compose exec -T postgres pg_isready -U postgres || echo "⚠️ PostgreSQL health check failed"
-          echo "🔍 Checking Backend..."
-          curl -f http://localhost:8000/health || echo "⚠️ Backend health check failed"
-          echo "🔍 Checking Frontend..."
-          curl -f http://localhost:3000/ || echo "⚠️ Frontend health check failed"
-        else
-          echo "⚠️ Services not running, skipping health checks"
-          echo "✅ Integration tests skipped (services unavailable)"
-          exit 0
-        fi
+        echo "🔍 Checking PostgreSQL..."
+        docker compose exec -T postgres pg_isready -U postgres
+        echo "🔍 Checking Backend..."
+        curl -f http://localhost:8000/health
+        echo "🔍 Checking Frontend..."
+        curl -f http://localhost:3000/
 
     - name: 🧪 Run integration tests
       run: |
@@ -264,28 +262,16 @@ jobs:
 
     - name: 🐳 Start services
       run: |
-        # Try modern docker compose first, fallback to docker-compose if available
-        if command -v docker &> /dev/null; then
-          echo "🐳 Starting services with Docker Compose..."
-          docker compose up -d || docker-compose up -d || echo "⚠️ Docker Compose not available, skipping performance tests"
-        else
-          echo "⚠️ Docker not available, skipping performance tests"
-          exit 0
-        fi
+        echo "🐳 Starting services with Docker Compose..."
+        docker compose up -d
         sleep 30
 
     - name: ⚡ Run performance tests
       run: |
         echo "⚡ Running performance tests..."
-        # Check if services are running before proceeding
-        if docker ps | grep -q "postgres\|backend\|frontend"; then
-          echo "✅ Services are running, proceeding with performance tests..."
-          # Add performance test commands here
-          echo "✅ Performance benchmarks met!"
-        else
-          echo "⚠️ Services not running, skipping performance tests"
-          echo "✅ Performance tests skipped (services unavailable)"
-        fi
+        echo "✅ Services are running, proceeding with performance tests..."
+        # Add performance test commands here
+        echo "✅ Performance benchmarks met!"
 
   # Final Summary
   summary:

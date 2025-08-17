@@ -1,0 +1,13 @@
+# Bandit security configuration for My First Bank App
+# This file configures which security tests to run and which to skip
+
+# Exclude virtual environment and cache directories
+exclude_dirs: ['.venv', '__pycache__', '.pytest_cache', '.mypy_cache']
+
+# Set confidence level (Low, Medium, High)
+# Only report issues with Medium or High confidence
+confidence: ['MEDIUM', 'HIGH']
+
+# Set severity level (Low, Medium, High)
+# Only report issues with Medium or High severity
+severity: ['MEDIUM', 'HIGH']

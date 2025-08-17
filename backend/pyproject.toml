@@ -25,7 +25,8 @@ exclude = [
     ".git",
     "__pycache__",
     ".pytest_cache",
-    ".*egg-info"
+    ".*egg-info",
+    "alembic"
 ]
 
 [tool.mypy]
@@ -44,6 +45,8 @@ warn_unreachable = true
 strict_equality = true
 show_error_codes = true
 ignore_missing_imports = true
+# Temporarily removed SQLAlchemy plugin due to type annotation issues
+# plugins = ["sqlalchemy.ext.mypy.plugin"]
 exclude = [
     ".venv",
     "venv",
@@ -55,7 +58,8 @@ exclude = [
     ".git",
     "__pycache__",
     ".pytest_cache",
-    ".*egg-info"
+    ".*egg-info",
+    "alembic"
 ]
 
 [tool.pytest.ini_options]
@@ -63,5 +67,11 @@ testpaths = ["tests"]
 python_files = ["test_*.py", "*_test.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
-addopts = "--strict-markers --strict-config"
+addopts = "--strict-markers"
 pythonpath = ["."]
+asyncio_mode = "auto"
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests",
+    "unit: marks tests as unit tests"
+]

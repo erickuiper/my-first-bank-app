@@ -18,3 +18,5 @@ class Child(Base):
     # Relationships
     parent = relationship("User", back_populates="children")
     accounts = relationship("Account", back_populates="child")
+    allowance_rules = relationship("AllowanceRule", back_populates="child")
+    chores = relationship("Chore", back_populates="child")
