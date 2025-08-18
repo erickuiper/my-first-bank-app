@@ -10,6 +10,16 @@ def get_unique_email() -> str:
     return f"test_{uuid.uuid4().hex[:8]}@example.com"
 
 
+def setup_account_pin(client: TestClient, token: str, account_id: int, pin: str = "1234") -> None:
+    """Helper function to set up a PIN for an account"""
+    response = client.post(
+        f"/api/v1/accounts/{account_id}/setup-pin",
+        json={"pin": pin},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == 200
+
+
 def test_register_user(client: TestClient) -> None:
     """Test user registration"""
     # Use unique email to avoid conflicts
@@ -305,11 +315,14 @@ def test_deposit_with_idempotency(client: TestClient) -> None:
     child_data = child_response.json()
     account_id = child_data["accounts"][0]["id"]  # Use the first account
 
+    # Set up a PIN for the account
+    setup_account_pin(client, token, account_id)
+
     # Create deposit with idempotency key
     idempotency_key = f"test_key_{uuid.uuid4().hex[:8]}"
     response = client.post(
         f"/api/v1/accounts/{account_id}/deposit",
-        json={"amount_cents": 1000, "idempotency_key": idempotency_key},
+        json={"amount_cents": 1000, "idempotency_key": idempotency_key, "pin": "1234"},
         headers={"Authorization": f"Bearer {token}"},
     )
 
@@ -346,13 +359,13 @@ def test_deposit_amount_validation(client: TestClient) -> None:
     child_data = child_response.json()
     account_id = child_data["accounts"][0]["id"]  # Use the first account
 
+    # Set up a PIN for the account
+    setup_account_pin(client, token, account_id)
+
     # Try to deposit 0 cents (below minimum)
     response = client.post(
         f"/api/v1/accounts/{account_id}/deposit",
-        json={
-            "amount_cents": 0,
-            "idempotency_key": f"test_key_{uuid.uuid4().hex[:8]}",
-        },
+        json={"amount_cents": 0, "idempotency_key": f"test_key_{uuid.uuid4().hex[:8]}", "pin": "1234"},
         headers={"Authorization": f"Bearer {token}"},
     )
     assert response.status_code == 400
@@ -385,11 +398,14 @@ def test_deposit_duplicate_idempotency(client: TestClient) -> None:
     child_data = child_response.json()
     account_id = child_data["accounts"][0]["id"]  # Use the first account
 
+    # Set up a PIN for the account
+    setup_account_pin(client, token, account_id)
+
     # Create first deposit
     idempotency_key = f"test_key_{uuid.uuid4().hex[:8]}"
     response1 = client.post(
         f"/api/v1/accounts/{account_id}/deposit",
-        json={"amount_cents": 1000, "idempotency_key": idempotency_key},
+        json={"amount_cents": 1000, "idempotency_key": idempotency_key, "pin": "1234"},
         headers={"Authorization": f"Bearer {token}"},
     )
     assert response1.status_code == 200
@@ -397,7 +413,7 @@ def test_deposit_duplicate_idempotency(client: TestClient) -> None:
     # Try to deposit again with same idempotency key
     response2 = client.post(
         f"/api/v1/accounts/{account_id}/deposit",
-        json={"amount_cents": 1000, "idempotency_key": idempotency_key},
+        json={"amount_cents": 1000, "idempotency_key": idempotency_key, "pin": "1234"},
         headers={"Authorization": f"Bearer {token}"},
     )
 
@@ -429,10 +445,7 @@ def test_deposit_invalid_account(client: TestClient) -> None:
     # Try to deposit to non-existent account
     response = client.post(
         "/api/v1/accounts/99999/deposit",
-        json={
-            "amount_cents": 1000,
-            "idempotency_key": f"test_key_{uuid.uuid4().hex[:8]}",
-        },
+        json={"amount_cents": 1000, "idempotency_key": f"test_key_{uuid.uuid4().hex[:8]}", "pin": "1234"},
         headers={"Authorization": f"Bearer {token}"},
     )
     assert response.status_code == 404
@@ -482,10 +495,7 @@ def test_deposit_unauthorized_account(client: TestClient) -> None:
     # Try to deposit to first user's account with second user's token
     response = client.post(
         f"/api/v1/accounts/{account_id}/deposit",
-        json={
-            "amount_cents": 1000,
-            "idempotency_key": f"test_key_{uuid.uuid4().hex[:8]}",
-        },
+        json={"amount_cents": 1000, "idempotency_key": f"test_key_{uuid.uuid4().hex[:8]}", "pin": "1234"},
         headers={"Authorization": f"Bearer {token2}"},
     )
     assert response.status_code == 404
@@ -592,13 +602,13 @@ def test_deposit_max_amount_exceeded(client: TestClient) -> None:
     child_data = child_response.json()
     account_id = child_data["accounts"][0]["id"]  # Use the first account
 
+    # Set up a PIN for the account
+    setup_account_pin(client, token, account_id)
+
     # Try to deposit amount exceeding maximum (1000001 cents = $10,000.01)
     response = client.post(
         f"/api/v1/accounts/{account_id}/deposit",
-        json={
-            "amount_cents": 1000001,
-            "idempotency_key": f"test_key_{uuid.uuid4().hex[:8]}",
-        },
+        json={"amount_cents": 1000001, "idempotency_key": f"test_key_{uuid.uuid4().hex[:8]}", "pin": "1234"},
         headers={"Authorization": f"Bearer {token}"},
     )
     assert response.status_code == 400
@@ -631,13 +641,13 @@ def test_transactions_with_valid_cursor(client: TestClient) -> None:
     child_data = child_response.json()
     account_id = child_data["accounts"][0]["id"]  # Use the first account
 
+    # Set up a PIN for the account
+    setup_account_pin(client, token, account_id)
+
     # Make a deposit to create a transaction
     response = client.post(
         f"/api/v1/accounts/{account_id}/deposit",
-        json={
-            "amount_cents": 1000,
-            "idempotency_key": f"test_key_{uuid.uuid4().hex[:8]}",
-        },
+        json={"amount_cents": 1000, "idempotency_key": f"test_key_{uuid.uuid4().hex[:8]}", "pin": "1234"},
         headers={"Authorization": f"Bearer {token}"},
     )
     assert response.status_code == 200

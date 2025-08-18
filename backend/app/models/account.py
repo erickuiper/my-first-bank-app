@@ -12,6 +12,7 @@ class Account(Base):
     account_type = Column(String, nullable=False)  # "checking" or "savings"
     balance_cents = Column(Numeric(20, 0), default=0, nullable=False)  # Store in cents
     child_id = Column(Integer, ForeignKey("children.id"), nullable=False)
+    pin_hash = Column(String, nullable=True)  # Hashed PIN for parental access
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 

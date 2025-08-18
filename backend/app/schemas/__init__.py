@@ -3,7 +3,7 @@ from .allowance_rule import AllowanceRuleBase, AllowanceRuleCreate, AllowanceRul
 from .child import ChildCreate, ChildResponse, ChildWithAccounts
 from .chore import ChoreBase, ChoreCreate, ChoreResponse, ChoreUpdate
 from .chore_completion import ChoreCompletionBase, ChoreCompletionCreate, ChoreCompletionResponse
-from .transaction import TransactionCreate, TransactionList, TransactionResponse
+from .transaction import DepositRequest, TransactionCreate, TransactionList, TransactionResponse, TransferRequest
 from .user import Token, TokenData, UserCreate, UserLogin, UserResponse
 
 __all__ = [
@@ -21,6 +21,8 @@ __all__ = [
     "TransactionCreate",
     "TransactionResponse",
     "TransactionList",
+    "TransferRequest",
+    "DepositRequest",
     "AllowanceRuleBase",
     "AllowanceRuleCreate",
     "AllowanceRuleResponse",
