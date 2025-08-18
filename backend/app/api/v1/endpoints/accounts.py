@@ -176,7 +176,10 @@ async def deposit(
     db.add(new_transaction)
 
     # Update account balance
-    account.balance_cents += Decimal(deposit_data.amount_cents)  # type: ignore[assignment]
+    current_balance = float(account.balance_cents) if account.balance_cents else 0.0
+    new_balance = current_balance + float(deposit_data.amount_cents)
+    account.balance_cents = new_balance
+    account.updated_at = datetime.now(timezone.utc)
 
     await db.commit()
     await db.refresh(new_transaction)
@@ -283,12 +286,12 @@ async def transfer_between_accounts(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Transfer amount must be positive")
 
     # Check sufficient funds in source account
-    if source_account.balance_cents < transfer_data.amount_cents:
+    source_current_balance = float(source_account.balance_cents) if source_account.balance_cents else 0.0
+    if source_current_balance < float(transfer_data.amount_cents):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=(
-                f"Insufficient funds. Available: {source_account.balance_cents}, "
-                f"Required: {transfer_data.amount_cents}"
+                f"Insufficient funds. Available: {source_current_balance}, " f"Required: {transfer_data.amount_cents}"
             ),
         )
 
@@ -309,10 +312,13 @@ async def transfer_between_accounts(
     )
 
     # Update account balances atomically
-    source_account.balance_cents -= transfer_data.amount_cents
+    source_current_balance = float(source_account.balance_cents) if source_account.balance_cents else 0.0
+    dest_current_balance = float(dest_account.balance_cents) if dest_account.balance_cents else 0.0
+
+    source_account.balance_cents = source_current_balance - float(transfer_data.amount_cents)
     source_account.updated_at = datetime.now(timezone.utc)
 
-    dest_account.balance_cents += transfer_data.amount_cents
+    dest_account.balance_cents = dest_current_balance + float(transfer_data.amount_cents)
     dest_account.updated_at = datetime.now(timezone.utc)
 
     # Add all changes in single commit
