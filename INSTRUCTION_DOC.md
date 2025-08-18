@@ -692,17 +692,274 @@ GET /status
 **Implementation Priority**: High
 **Effort Estimate**: 1-2 weeks
 
-#### 4. Android App Development
+#### 4. Account Configuration and Parental Controls
+**Goal**: Implement account PIN configuration and comprehensive parental access controls for enhanced security and oversight.
+
+**User Stories:**
+- As a parent, I must set up a PIN code after creating an account for my child
+- As a parent, I can access a dedicated parental dashboard to manage all aspects of my children's accounts
+- As a parent, I can verify my PIN before making any deposits to ensure security
+- As a parent, I can change account PINs when needed
+
+**Data Models:**
+```sql
+-- Enhanced Account model (add to existing)
+ALTER TABLE accounts ADD COLUMN pin_hash VARCHAR(255);
+```
+
+**API Endpoints:**
+```python
+# Account PIN management
+POST /accounts/{account_id}/setup-pin
+POST /accounts/{account_id}/change-pin
+POST /accounts/{account_id}/verify-pin
+
+# Enhanced deposit with PIN verification
+POST /accounts/{account_id}/deposit (now requires PIN verification)
+
+# Parental dashboard
+GET /parental/dashboard
+GET /parental/children/{child_id}/summary
+```
+
+**Frontend Screens:**
+- Account PIN Setup Screen (parent)
+- Parental Dashboard Screen (parent)
+- PIN Verification Modal (for deposits)
+- Account Management Screen (parent)
+
+**Implementation Priority**: High
+**Effort Estimate**: 2-3 weeks
+
+#### 5. Android App Development
 **Goal**: Create a native Android app for the frontend and test it on a test device.
 
 **Implementation Steps:**
 1. Configure Expo for Android builds
 2. Implement Android-specific features
-3. Test on physical device
-4. Optimize for mobile performance
-5. Implement push notifications (optional)
+3. Test on physical Android device
+4. Optimize for Android performance and UX
 
 **Implementation Priority**: Medium
+**Effort Estimate**: 2-3 weeks
+
+### Critical Bug Fixes (Priority 1 - Must Fix)
+
+#### 1. Account Balance Calculation Fix
+**Issue**: Money added to an account is not properly reflected in the account total balance.
+
+**Problem Description**:
+- When deposits are made to accounts, the transaction is recorded but the account balance is not updated correctly
+- This leads to incorrect balance displays and potential financial inconsistencies
+- Affects both checking and savings accounts
+
+**Required Fixes**:
+- Ensure all deposit transactions properly update the account `balance_cents` field
+- Implement proper balance validation before allowing transactions
+- Add database constraints to prevent negative balances
+- Implement balance reconciliation checks
+
+**Data Model Updates**:
+```sql
+-- Add balance constraint to prevent negative balances
+ALTER TABLE accounts ADD CONSTRAINT positive_balance CHECK (balance_cents >= 0);
+
+-- Add balance validation trigger (if needed)
+CREATE OR REPLACE FUNCTION validate_account_balance()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF NEW.balance_cents < 0 THEN
+        RAISE EXCEPTION 'Account balance cannot be negative';
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER account_balance_validation
+    BEFORE UPDATE ON accounts
+    FOR EACH ROW
+    EXECUTE FUNCTION validate_account_balance();
+```
+
+**API Endpoint Fixes**:
+```python
+# Enhanced deposit endpoint with proper balance updates
+@router.post("/{account_id}/deposit", response_model=BalanceUpdate)
+async def deposit(
+    account_id: int,
+    transaction_data: TransactionCreate,
+    pin_verification: AccountPinVerification,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> BalanceUpdate:
+    # Verify account access and PIN
+    account = await verify_account_access(account_id, current_user, db)
+    if not await verify_account_pin(account, pin_verification.pin):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="PIN verification failed. Deposit not allowed."
+        )
+
+    # Validate deposit amount
+    if transaction_data.amount_cents <= 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Deposit amount must be positive"
+        )
+
+    # Create transaction record
+    transaction = Transaction(
+        account_id=account_id,
+        amount_cents=transaction_data.amount_cents,
+        transaction_type="deposit",
+        idempotency_key=transaction_data.idempotency_key
+    )
+
+    # Update account balance atomically
+    new_balance = account.balance_cents + transaction_data.amount_cents
+    account.balance_cents = new_balance
+    account.updated_at = datetime.now(timezone.utc)
+
+    # Add transaction and update account in single commit
+    db.add(transaction)
+    await db.commit()
+    await db.refresh(transaction)
+    await db.refresh(account)
+
+    return BalanceUpdate(
+        new_balance_cents=new_balance,
+        transaction=transaction
+    )
+```
+
+**Testing Requirements**:
+- Unit tests for balance calculation accuracy
+- Integration tests for concurrent deposits
+- Database constraint validation tests
+- Balance reconciliation tests
+
+**Implementation Priority**: Critical
+**Effort Estimate**: 1-2 weeks
+
+#### 2. Inter-Account Transfer Validation
+**Issue**: Money can only be transferred to savings from checking, but without proper balance validation.
+
+**Problem Description**:
+- Current system allows transfers to savings account without checking if checking account has sufficient funds
+- This could lead to negative balances or overdraft situations
+- Transfer logic needs proper validation and error handling
+
+**Required Fixes**:
+- Implement proper balance validation before allowing transfers
+- Add transfer endpoint with source and destination account validation
+- Ensure atomic transactions for transfers (both accounts updated or neither)
+- Add proper error messages for insufficient funds
+
+**New API Endpoint**:
+```python
+# New transfer endpoint
+@router.post("/transfer", response_model=dict)
+async def transfer_between_accounts(
+    transfer_data: TransferRequest,
+    pin_verification: AccountPinVerification,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """Transfer money between a child's checking and savings accounts."""
+
+    # Verify source account access and PIN
+    source_account = await verify_account_access(transfer_data.source_account_id, current_user, db)
+    if not await verify_account_pin(source_account, pin_verification.pin):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="PIN verification failed. Transfer not allowed."
+        )
+
+    # Verify destination account access
+    dest_account = await verify_account_access(transfer_data.destination_account_id, current_user, db)
+
+    # Validate accounts belong to same child
+    if source_account.child_id != dest_account.child_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Can only transfer between accounts of the same child"
+        )
+
+    # Validate transfer amount
+    if transfer_data.amount_cents <= 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Transfer amount must be positive"
+        )
+
+    # Check sufficient funds in source account
+    if source_account.balance_cents < transfer_data.amount_cents:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Insufficient funds. Available: {source_account.balance_cents}, Required: {transfer_data.amount_cents}"
+        )
+
+    # Create transfer transaction (debit from source)
+    debit_transaction = Transaction(
+        account_id=source_account.id,
+        amount_cents=-transfer_data.amount_cents,  # Negative for debit
+        transaction_type="transfer_out",
+        idempotency_key=f"transfer_{transfer_data.idempotency_key}_debit"
+    )
+
+    # Create transfer transaction (credit to destination)
+    credit_transaction = Transaction(
+        account_id=dest_account.id,
+        amount_cents=transfer_data.amount_cents,  # Positive for credit
+        transaction_type="transfer_in",
+        idempotency_key=f"transfer_{transfer_data.idempotency_key}_credit"
+    )
+
+    # Update account balances atomically
+    source_account.balance_cents -= transfer_data.amount_cents
+    source_account.updated_at = datetime.now(timezone.utc)
+
+    dest_account.balance_cents += transfer_data.amount_cents
+    dest_account.updated_at = datetime.now(timezone.utc)
+
+    # Add all changes in single commit
+    db.add(debit_transaction)
+    db.add(credit_transaction)
+    await db.commit()
+
+    return {
+        "message": "Transfer completed successfully",
+        "transfer_id": f"transfer_{transfer_data.idempotency_key}",
+        "amount_cents": transfer_data.amount_cents,
+        "source_account_balance": source_account.balance_cents,
+        "destination_account_balance": dest_account.balance_cents
+    }
+```
+
+**New Schema**:
+```python
+# Add to schemas/transaction.py
+class TransferRequest(BaseModel):
+    source_account_id: int = Field(..., description="ID of source account (checking)")
+    destination_account_id: int = Field(..., description="ID of destination account (savings)")
+    amount_cents: int = Field(..., gt=0, description="Amount to transfer in cents")
+    idempotency_key: str = Field(..., description="Unique key to prevent duplicate transfers")
+```
+
+**Frontend Updates**:
+- Add transfer screen with source/destination account selection
+- Display current balances for both accounts
+- Show transfer validation errors
+- Add transfer confirmation with PIN verification
+
+**Testing Requirements**:
+- Unit tests for transfer validation logic
+- Integration tests for successful transfers
+- Tests for insufficient funds scenarios
+- Tests for invalid account combinations
+- Concurrent transfer tests
+
+**Implementation Priority**: Critical
 **Effort Estimate**: 2-3 weeks
 
 ### Technical Improvements
@@ -788,6 +1045,415 @@ GET /status
 - Children can complete chores and see earnings
 - Bill payments are automated and tracked
 - Mobile app provides smooth user experience
+
+---
+
+## Version 0.3 Roadmap - Multi-Currency & Multi-Language Support
+
+### Overview
+Version 0.3 focuses on expanding the app's global reach by supporting multiple currencies and languages, while also enhancing the educational value with advanced financial literacy features.
+
+### Core Features (Priority 1)
+
+#### 1. Multi-Currency Support
+**Goal**: Enable parents and children to manage accounts in their local currency, with support for currency conversion and exchange rates.
+
+**User Stories:**
+- As a parent, I can select my preferred currency when setting up the app
+- As a parent, I can view account balances in my local currency
+- As a parent, I can set allowance amounts in my local currency
+- As a parent, I can see real-time exchange rates for educational purposes
+- As a child, I can learn about different currencies and their values
+
+**Data Models:**
+```sql
+-- Currency support
+currencies (
+    id SERIAL PRIMARY KEY,
+    code VARCHAR(3) NOT NULL UNIQUE, -- ISO 4217 currency code
+    name VARCHAR(50) NOT NULL,
+    symbol VARCHAR(5) NOT NULL,
+    decimal_places INTEGER DEFAULT 2,
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Exchange rates (historical tracking)
+exchange_rates (
+    id SERIAL PRIMARY KEY,
+    from_currency_id INTEGER REFERENCES currencies(id),
+    to_currency_id INTEGER REFERENCES currencies(id),
+    rate DECIMAL(20, 8) NOT NULL,
+    effective_date DATE NOT NULL,
+    source VARCHAR(50) NOT NULL, -- API source
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Enhanced accounts with currency
+ALTER TABLE accounts ADD COLUMN currency_id INTEGER REFERENCES currencies(id);
+ALTER TABLE accounts ADD COLUMN display_currency_id INTEGER REFERENCES currencies(id);
+
+-- Enhanced transactions with currency
+ALTER TABLE transactions ADD COLUMN currency_id INTEGER REFERENCES currencies(id);
+ALTER TABLE transactions ADD COLUMN exchange_rate_at_time DECIMAL(20, 8);
+```
+
+**API Endpoints:**
+```python
+# Currency management
+GET /currencies
+GET /currencies/{currency_id}
+GET /currencies/{currency_id}/exchange-rates
+
+# Exchange rate management
+GET /exchange-rates/{from_currency}/{to_currency}
+GET /exchange-rates/{from_currency}/{to_currency}/history
+
+# Enhanced account endpoints
+POST /accounts (now includes currency selection)
+PUT /accounts/{account_id}/currency
+GET /accounts/{account_id}/balance-in-currency/{currency_code}
+
+# Enhanced transaction endpoints
+GET /transactions (now includes currency conversion)
+POST /transactions (now supports multi-currency)
+```
+
+**Frontend Screens:**
+- Currency Selection Screen (parent)
+- Multi-Currency Dashboard (parent/child)
+- Exchange Rate Learning Screen (child)
+- Currency Converter Tool (parent/child)
+
+**Implementation Priority**: High
+**Effort Estimate**: 4-5 weeks
+
+#### 2. Multi-Language Support (i18n)
+**Goal**: Provide the app in multiple languages to serve diverse global audiences and enhance accessibility.
+
+**User Stories:**
+- As a user, I can select my preferred language when first using the app
+- As a user, I can change the app language at any time
+- As a user, I can see all text, numbers, and dates in my preferred language
+- As a user, I can access the app in my native language for better understanding
+
+**Technical Implementation:**
+```typescript
+// Frontend i18n structure
+locales/
+├── en/
+│   ├── common.json
+│   ├── auth.json
+│   ├── dashboard.json
+│   ├── accounts.json
+│   ├── chores.json
+│   └── allowances.json
+├── es/
+│   ├── common.json
+│   ├── auth.json
+│   └── ...
+├── fr/
+├── de/
+├── ja/
+├── zh/
+└── ar/
+```
+
+**Supported Languages (Phase 1):**
+- English (en) - Default
+- Spanish (es) - Latin America & Spain
+- French (fr) - France & Canada
+- German (de) - Germany, Austria, Switzerland
+- Japanese (ja) - Japan
+- Chinese Simplified (zh-CN) - China
+- Arabic (ar) - Middle East & North Africa
+
+**API Endpoints:**
+```python
+# Language support
+GET /languages
+GET /languages/{language_code}
+POST /users/{user_id}/preferred-language
+GET /translations/{language_code}/{namespace}
+```
+
+**Frontend Features:**
+- Language selector in settings
+- Automatic language detection based on device
+- RTL (Right-to-Left) support for Arabic
+- Localized number and date formatting
+- Localized currency display
+
+**Implementation Priority**: High
+**Effort Estimate**: 3-4 weeks
+
+#### 4. Dark Mode & Theme Support
+**Goal**: Implement comprehensive dark mode and theme customization to enhance user experience and accessibility.
+
+**User Stories:**
+- As a user, I can toggle between light and dark mode for better viewing comfort
+- As a user, I can have the app automatically follow my system theme preference
+- As a user, I can customize accent colors and theme elements
+- As a user, I can have different themes for different times of day (auto-switching)
+
+**Technical Implementation:**
+```typescript
+// Theme configuration structure
+themes/
+├── light/
+│   ├── colors.json
+│   ├── typography.json
+│   └── spacing.json
+├── dark/
+│   ├── colors.json
+│   ├── typography.json
+│   └── spacing.json
+└── custom/
+    ├── colors.json
+    ├── typography.json
+    └── spacing.json
+
+// Theme context and hooks
+interface ThemeContextType {
+  theme: 'light' | 'dark' | 'auto';
+  isDark: boolean;
+  colors: ThemeColors;
+  toggleTheme: () => void;
+  setTheme: (theme: 'light' | 'dark' | 'auto') => void;
+}
+
+// Theme-aware components
+const ThemedButton = styled.button<{ variant: 'primary' | 'secondary' }>`
+  background-color: ${props =>
+    props.variant === 'primary'
+      ? props.theme.colors.primary
+      : props.theme.colors.secondary
+  };
+  color: ${props => props.theme.colors.onPrimary};
+  border: 2px solid ${props => props.theme.colors.border};
+  border-radius: ${props => props.theme.spacing.borderRadius};
+  padding: ${props => props.theme.spacing.buttonPadding};
+  transition: all 0.2s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px ${props => props.theme.colors.shadow};
+  }
+`;
+```
+
+**Theme Features**:
+- **Automatic Theme Detection**: Follows system preference (light/dark)
+- **Manual Theme Selection**: User can override system preference
+- **Scheduled Theme Switching**: Auto-switch based on time of day
+- **Custom Color Schemes**: Personalized accent colors
+- **Accessibility**: High contrast modes and color-blind friendly options
+
+**Data Models**:
+```sql
+-- User theme preferences
+user_preferences (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id),
+    theme_mode VARCHAR(20) DEFAULT 'auto', -- light, dark, auto
+    accent_color VARCHAR(7) DEFAULT '#007AFF', -- hex color
+    auto_switch_enabled BOOLEAN DEFAULT true,
+    light_start_time TIME DEFAULT '06:00:00',
+    dark_start_time TIME DEFAULT '18:00:00',
+    high_contrast BOOLEAN DEFAULT false,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+```
+
+**API Endpoints**:
+```python
+# Theme management
+GET /users/{user_id}/theme-preferences
+PUT /users/{user_id}/theme-preferences
+POST /users/{user_id}/theme-preferences/reset
+GET /themes/available
+GET /themes/{theme_name}/colors
+```
+
+**Frontend Components**:
+- Theme toggle switch in settings
+- Color picker for accent colors
+- Theme preview cards
+- Auto-switch time picker
+- High contrast mode toggle
+
+**Implementation Priority**: Medium
+**Effort Estimate**: 2-3 weeks
+
+#### 3. Advanced Financial Literacy Features
+**Goal**: Enhance the educational value with advanced financial concepts and interactive learning tools.
+
+**User Stories:**
+- As a child, I can learn about compound interest through interactive simulations
+- As a child, I can practice budgeting with virtual scenarios
+- As a parent, I can set financial goals and track progress
+- As a child, I can earn badges for financial literacy achievements
+
+**Data Models:**
+```sql
+-- Financial goals
+financial_goals (
+    id SERIAL PRIMARY KEY,
+    child_id INTEGER REFERENCES children(id),
+    name VARCHAR(100) NOT NULL,
+    description TEXT,
+    target_amount_cents INTEGER NOT NULL,
+    current_amount_cents INTEGER DEFAULT 0,
+    target_date DATE,
+    goal_type VARCHAR(20) DEFAULT 'savings', -- savings, spending, charity
+    status VARCHAR(20) DEFAULT 'active', -- active, completed, cancelled
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Learning achievements
+achievements (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    description TEXT,
+    category VARCHAR(50) NOT NULL, -- savings, budgeting, chores, etc.
+    points INTEGER DEFAULT 0,
+    icon_url VARCHAR(255),
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- User achievements
+user_achievements (
+    id SERIAL PRIMARY KEY,
+    child_id INTEGER REFERENCES children(id),
+    achievement_id INTEGER REFERENCES achievements(id),
+    earned_at TIMESTAMP DEFAULT NOW(),
+    points_earned INTEGER NOT NULL
+);
+
+-- Interactive learning sessions
+learning_sessions (
+    id SERIAL PRIMARY KEY,
+    child_id INTEGER REFERENCES children(id),
+    session_type VARCHAR(50) NOT NULL, -- compound_interest, budgeting, etc.
+    completed_at TIMESTAMP DEFAULT NOW(),
+    score INTEGER,
+    duration_seconds INTEGER,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+```
+
+**API Endpoints:**
+```python
+# Financial goals
+POST /children/{child_id}/financial-goals
+GET /children/{child_id}/financial-goals
+PUT /financial-goals/{goal_id}
+DELETE /financial-goals/{goal_id}
+POST /financial-goals/{goal_id}/update-progress
+
+# Achievements
+GET /achievements
+GET /children/{child_id}/achievements
+POST /children/{child_id}/achievements/{achievement_id}/earn
+
+# Learning sessions
+POST /children/{child_id}/learning-sessions
+GET /children/{child_id}/learning-sessions
+GET /children/{child_id}/learning-progress
+```
+
+**Frontend Screens:**
+- Financial Goals Dashboard (child)
+- Interactive Learning Center (child)
+- Achievement Gallery (child)
+- Progress Tracking (parent/child)
+- Educational Games (child)
+
+**Implementation Priority**: Medium
+**Effort Estimate**: 4-5 weeks
+
+### Technical Improvements (Priority 2)
+
+#### 1. Performance Optimization
+- Implement Redis caching for exchange rates
+- Add CDN for static assets
+- Optimize database queries for multi-currency operations
+- Implement lazy loading for translations
+
+#### 2. Security Enhancements
+- Add rate limiting for exchange rate API calls
+- Implement currency validation and sanitization
+- Add audit logging for currency operations
+- Enhanced PIN security with biometric options
+
+#### 3. Monitoring and Analytics
+- Multi-currency transaction monitoring
+- Language usage analytics
+- Performance metrics for different locales
+- User engagement tracking by region
+
+### Infrastructure Requirements
+
+#### 1. Exchange Rate Services
+- Integration with currency exchange APIs (Fixer.io, ExchangeRate-API)
+- Real-time rate updates (every 15 minutes)
+- Historical rate data storage
+- Fallback rate sources for reliability
+
+#### 2. Localization Infrastructure
+- Translation management system
+- Automated language detection
+- RTL layout support
+- Localized content delivery
+
+#### 3. Global Deployment
+- Multi-region database deployment
+- CDN with edge locations
+- Localized hosting options
+- Compliance with regional data laws
+
+### Implementation Phases
+
+#### Phase 1: Multi-Currency Foundation (Weeks 1-5)
+1. Implement currency data models and APIs
+2. Integrate exchange rate services
+3. Update account and transaction systems
+4. Add currency conversion logic
+
+#### Phase 2: Multi-Language Support (Weeks 6-9)
+1. Implement i18n infrastructure
+2. Create translation files for 7 languages
+3. Add RTL support for Arabic
+4. Update frontend for localization
+
+#### Phase 3: Financial Literacy Features (Weeks 10-13)
+1. Implement financial goals system
+2. Create achievement system
+3. Build interactive learning tools
+4. Add progress tracking
+
+#### Phase 4: Testing & Optimization (Weeks 14-15)
+1. Multi-currency testing
+2. Localization testing
+3. Performance optimization
+4. Security review
+
+### Success Criteria for Version 0.3
+- Support for at least 7 major currencies with real-time exchange rates
+- Full localization in 7 languages with RTL support
+- Interactive financial literacy features with achievement system
+- Performance maintained across all locales
+- 99.9% uptime for exchange rate services
+- Successful deployment in multiple regions
+- Positive user feedback from diverse language groups
+
+### Future Considerations (Version 0.4+)
+- Cryptocurrency support for educational purposes
+- Advanced analytics and reporting
+- Social features and family sharing
+- Integration with educational institutions
+- AI-powered financial advice and recommendations
 
 ---
 

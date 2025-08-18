@@ -9,8 +9,18 @@ from fastapi.testclient import TestClient
 
 
 def get_unique_email() -> str:
-    """Generate a unique email address for testing."""
+    """Generate a unique email address for testing"""
     return f"test_{uuid.uuid4().hex[:8]}@example.com"
+
+
+def setup_account_pin(client: TestClient, token: str, account_id: int, pin: str = "1234") -> None:
+    """Helper function to set up a PIN for an account"""
+    response = client.post(
+        f"/api/v1/accounts/{account_id}/setup-pin",
+        json={"pin": pin},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == 200
 
 
 class TestAuthEndpoints:
@@ -227,8 +237,11 @@ class TestTransactionEndpoints:
         child_data = child_response.json()
         account_id = child_data["accounts"][0]["id"]  # Use checking account
 
+        # Set up a PIN for the account
+        setup_account_pin(client, token, account_id)
+
         # Make deposit
-        deposit_data = {"amount_cents": 1000, "transaction_type": "deposit", "idempotency_key": "test_key_123"}
+        deposit_data = {"amount_cents": 1000, "idempotency_key": "test_key_123", "pin": "1234"}
         response = client.post(f"/api/v1/accounts/{account_id}/deposit", json=deposit_data, headers=headers)
         assert response.status_code == 200
 
@@ -251,12 +264,11 @@ class TestTransactionEndpoints:
         child_data = child_response.json()
         account_id = child_data["accounts"][0]["id"]  # Use checking account
 
+        # Set up a PIN for the account
+        setup_account_pin(client, token, account_id)
+
         # Test minimum amount
-        deposit_data = {
-            "amount_cents": 0,  # Below minimum
-            "transaction_type": "deposit",
-            "idempotency_key": "test_key_min",
-        }
+        deposit_data = {"amount_cents": 0, "idempotency_key": "test_key_min", "pin": "1234"}  # Below minimum
         response = client.post(f"/api/v1/accounts/{account_id}/deposit", json=deposit_data, headers=headers)
         assert response.status_code == 400
 
@@ -275,8 +287,11 @@ class TestTransactionEndpoints:
         child_data = child_response.json()
         account_id = child_data["accounts"][0]["id"]  # Use checking account
 
+        # Set up a PIN for the account
+        setup_account_pin(client, token, account_id)
+
         # Make first deposit
-        deposit_data = {"amount_cents": 1000, "transaction_type": "deposit", "idempotency_key": "test_key_dup"}
+        deposit_data = {"amount_cents": 1000, "idempotency_key": "test_key_dup", "pin": "1234"}
         response1 = client.post(f"/api/v1/accounts/{account_id}/deposit", json=deposit_data, headers=headers)
         assert response1.status_code == 200
 
@@ -299,7 +314,7 @@ class TestTransactionEndpoints:
         headers = {"Authorization": f"Bearer {token}"}
 
         # Try to deposit to non-existent account
-        deposit_data = {"amount_cents": 1000, "transaction_type": "deposit", "idempotency_key": "test_key_invalid"}
+        deposit_data = {"amount_cents": 1000, "idempotency_key": "test_key_invalid", "pin": "1234"}
         response = client.post("/api/v1/accounts/99999/deposit", json=deposit_data, headers=headers)
         assert response.status_code == 404
 
@@ -325,7 +340,7 @@ class TestTransactionEndpoints:
         token2 = register_response2.json()["access_token"]
         headers2 = {"Authorization": f"Bearer {token2}"}
 
-        deposit_data = {"amount_cents": 1000, "transaction_type": "deposit", "idempotency_key": "test_key_unauthorized"}
+        deposit_data = {"amount_cents": 1000, "idempotency_key": "test_key_unauthorized", "pin": "1234"}
         response = client.post(f"/api/v1/accounts/{account_id}/deposit", json=deposit_data, headers=headers2)
         assert response.status_code == 404  # Account not found for this user
 
@@ -382,12 +397,11 @@ class TestTransactionEndpoints:
         child_data = child_response.json()
         account_id = child_data["accounts"][0]["id"]  # Use checking account
 
+        # Set up a PIN for the account
+        setup_account_pin(client, token, account_id)
+
         # Test maximum amount (assuming MAX_DEPOSIT_AMOUNT_CENTS is 1000000)
-        deposit_data = {
-            "amount_cents": 1000001,  # Above maximum
-            "transaction_type": "deposit",
-            "idempotency_key": "test_key_max",
-        }
+        deposit_data = {"amount_cents": 1000001, "idempotency_key": "test_key_max", "pin": "1234"}  # Above maximum
         response = client.post(f"/api/v1/accounts/{account_id}/deposit", json=deposit_data, headers=headers)
         assert response.status_code == 400
 
